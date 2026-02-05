@@ -68,7 +68,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode }) => {
         
         <div className="mt-4 text-xs text-gray-500">
           <p>1. Abra o WhatsApp no seu celular</p>
-          <p>2. Toque em Menu > Dispositivos conectados</p>
+          <p>2. Toque em Menu &gt; Dispositivos conectados</p>
           <p>3. Toque em "Conectar um dispositivo"</p>
           <p>4. Aponte a câmera para este QR Code</p>
         </div>
