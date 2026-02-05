@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { apiService } from './services/api';
 import { ConnectionStatus, Chat, Message } from './types';
-import { Smartphone, MessageSquare, Activity, Settings, LogOut, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Smartphone, MessageSquare, Settings, LogOut, Check, X, Loader2 } from 'lucide-react';
 
 // Components
 import QRCodeDisplay from './components/QRCodeDisplay';
@@ -97,7 +97,7 @@ function App() {
   };
 
   const tabs = [
-    { id: 'dashboard' as TabType, label: 'Dashboard', icon: Activity },
+    { id: 'dashboard' as TabType, label: 'Dashboard', icon: Settings },
     { id: 'chat' as TabType, label: 'Live Chat', icon: MessageSquare },
     { id: 'api' as TabType, label: 'API Docs', icon: Smartphone },
     { id: 'settings' as TabType, label: 'Configurações', icon: Settings },
@@ -125,12 +125,12 @@ function App() {
               <div className="ml-4 flex items-center space-x-2">
                 {connectionStatus.connected ? (
                   <>
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <Check className="h-5 w-5 text-green-500" />
                     <span className="text-sm text-green-600">Conectado</span>
                   </>
                 ) : (
                   <>
-                    <XCircle className="h-5 w-5 text-red-500" />
+                    <X className="h-5 w-5 text-red-500" />
                     <span className="text-sm text-red-600">Desconectado</span>
                   </>
                 )}

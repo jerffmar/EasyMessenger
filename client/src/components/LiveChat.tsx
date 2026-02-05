@@ -26,7 +26,7 @@ const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
   React.useEffect(() => {
     const unsubscribe = onMessageUpsert((message: Message) => {
       if (selectedChat && message.key.remoteJid === selectedChat.id) {
-        setMessages(prev => [...prev, message]);
+        setMessages((prev: Message[]) => [...prev, message]);
       }
     });
 
@@ -63,7 +63,7 @@ const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
         messageTimestamp: Date.now(),
         status: 'PENDING'
       };
-      setMessages(prev => [...prev, optimisticMessage]);
+      setMessages((prev: Message[]) => [...prev, optimisticMessage]);
     } catch (error) {
       console.error('Failed to send message:', error);
     }

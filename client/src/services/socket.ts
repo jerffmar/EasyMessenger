@@ -1,5 +1,12 @@
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { Message, Chat } from '../types';
+
+interface Socket {
+  connected: boolean;
+  on(event: string, callback: (...args: any[]) => void): void;
+  off(event: string, callback: (...args: any[]) => void): void;
+  disconnect(): void;
+}
 
 class SocketService {
   private socket: Socket | null = null;

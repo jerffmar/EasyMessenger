@@ -1,6 +1,6 @@
 import React from 'react';
 import { ConnectionStatus, Chat } from '../types';
-import { Users, MessageSquare, Send, Clock, TrendingUp } from 'lucide-react';
+import { Users, MessageSquare, Send } from 'lucide-react';
 
 interface DashboardProps {
   connectionStatus: ConnectionStatus;
@@ -60,7 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({ connectionStatus, chats }) => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-orange-600" />
+              <Users className="h-8 w-8 text-orange-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Grupos</p>

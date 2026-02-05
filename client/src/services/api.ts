@@ -18,7 +18,7 @@ export const apiService = {
   // Session endpoints
   async getSessionStatus(): Promise<ConnectionStatus> {
     const response = await api.get('/api/session/status');
-    return response.data;
+    return (response.data as ConnectionStatus) || { connected: false, user: null };
   },
 
   async logout(): Promise<ApiResponse> {
@@ -40,11 +40,11 @@ export const apiService = {
   // Chats endpoints
   async getChats(): Promise<Chat[]> {
     const response = await api.get('/api/chats');
-    return response.data;
+    return (response.data as Chat[]) || [];
   },
 
   async getChatMessages(chatId: string, limit: number = 50): Promise<Message[]> {
     const response = await api.get(`/api/chats/${chatId}/messages?limit=${limit}`);
-    return response.data;
+    return (response.data as Message[]) || [];
   },
 };

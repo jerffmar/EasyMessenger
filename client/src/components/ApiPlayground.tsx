@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { apiService } from '../services/api';
-import { Play, Copy, CheckCircle } from 'lucide-react';
+import { Send, Check } from 'lucide-react';
 
 interface ApiTest {
   name: string;
@@ -172,7 +172,7 @@ const ApiPlayground: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Play className="h-4 w-4" />
+                  <Send className="h-4 w-4" />
                   <span>Executar</span>
                 </>
               )}
@@ -190,12 +190,10 @@ const ApiPlayground: React.FC = () => {
                 >
                   {copied ? (
                     <>
-                      <CheckCircle className="h-4 w-4" />
                       <span>Copiado!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="h-4 w-4" />
                       <span>Copiar</span>
                     </>
                   )}
