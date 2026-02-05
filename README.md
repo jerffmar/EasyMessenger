@@ -271,6 +271,216 @@ npm run lint:fix
 - **Voice/Video Calls**: Integration for WhatsApp calls
 - **Status Stories**: View and manage WhatsApp status updates
 
+## 🚀 Deployment
+
+### Render Deployment
+
+Render is a recommended platform for deploying EasyMessenger. Follow these steps for a successful deployment:
+
+#### Prerequisites
+- Render account (free tier available)
+- GitHub repository with your EasyMessenger code
+- WhatsApp account for testing
+
+#### Step 1: Prepare Your Repository
+1. Push your code to a GitHub repository
+2. Ensure your `render.yaml` file is committed (included in this project)
+
+#### Step 2: Create Single Render Service
+
+**Combined Backend + Frontend Service (Web Service)**
+1. Go to Render Dashboard → New → Web Service
+2. Connect your GitHub repository
+3. Configure the service:
+
+**Build Command:**
+```bash
+npm install && cd client && npm install && cd .. && npm run build
+```
+
+**Start Command:**
+```bash
+npm start
+```
+
+**Environment Variables:**
+```env
+# Node.js Environment
+NODE_ENV=production
+PORT=3001
+
+# Session Configuration
+SESSION_PATH=/opt/render/project/src/auth_info
+
+# Logging
+LOG_LEVEL=info
+
+# Optional: Webhook Configuration
+WEBHOOK_URL=
+
+# Optional: Advanced Configuration
+ADV_SECRET_KEY=
+SOCKET_URL=
+```
+
+**Service Configuration:**
+- **Runtime**: Node 20 (or latest)
+- **Region**: Choose nearest to your users
+- **Branch**: `main` (or your default branch)
+- **Root Directory**: `.` (project root)
+- **Instance Type**: Free (for testing) or Standard
+
+**Health Check Path:**
+```
+/health
+```
+
+**Auto-Deploy**: Enable for automatic deployments on push
+
+**How it works:**
+- The backend serves the API on port 3001
+- The built frontend files are served from `/public` directory
+- All requests to the root domain serve the React app
+- API requests to `/api/*` are handled by the backend
+- Socket.io connections work seamlessly on the same domain
+
+#### Step 3: Configure CORS and Networking
+
+**Update Backend CORS Settings:**
+In your backend code, ensure CORS allows the same domain (since both frontend and backend are on the same service):
+```typescript
+app.use(cors({
+  origin: ['https://your-service-name.onrender.com', 'http://localhost:5173'],
+  credentials: true
+}));
+```
+
+**Update Frontend API Configuration:**
+In your client code, use relative URLs since both frontend and backend are on the same domain:
+```typescript
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || '';
+```
+
+**For Development:**
+Set these environment variables in your `.env` file:
+```env
+VITE_API_URL=http://localhost:3001
+VITE_SOCKET_URL=http://localhost:3001
+```
+
+**For Production on Render:**
+Set these in your Render service environment:
+```env
+VITE_API_URL=
+VITE_SOCKET_URL=
+```
+(Empty strings will use relative URLs, which work correctly in production)
+
+#### Step 4: Persistent Storage
+
+**For Session Persistence:**
+Render's free tier doesn't include persistent storage. For production:
+1. Use Render Disks for persistent `/opt/render/project/src/auth_info`
+2. Or implement cloud storage (AWS S3, Google Cloud Storage)
+
+**Alternative: Use Environment Variables for Critical Data**
+```env
+# Store critical session data in environment if needed
+SESSION_BACKUP_URL=
+```
+
+#### Step 5: Custom Domain (Optional)
+
+**Single Service Domain:**
+- Go to your Web Service → Custom Domains
+- Add your custom domain (e.g., `app.yourdomain.com` or `whatsapp.yourdomain.com`)
+- Update DNS records as instructed by Render
+- Both frontend and backend will be accessible on the same domain
+- API endpoints will be available at `https://yourdomain.com/api/*`
+
+#### Step 6: SSL and Security
+
+- SSL certificates are automatically provided by Render
+- Ensure your environment variables are set correctly
+
+#### Troubleshooting Common Issues
+
+**Build Failures:**
+```bash
+# Check build logs for specific errors
+# Common issues:
+# - Missing dependencies: Ensure package.json is correct
+# - TypeScript errors: Run `npm run lint` locally first
+# - Memory issues: Upgrade to a larger instance type
+```
+
+**Runtime Errors:**
+```bash
+# Check service logs
+# Common issues:
+# - Port conflicts: Ensure PORT environment variable is set to 3001
+# - Permission issues: Check file permissions for auth_info directory
+# - CORS errors: Verify frontend URL is in CORS allowlist
+```
+
+**WhatsApp Connection Issues:**
+```bash
+# Common issues:
+# - Session loss: Implement persistent storage
+# - QR code not generating: Check logs for authentication errors
+# - Connection timeouts: Ensure proper network configuration
+```
+
+#### Production Optimization
+
+**Performance Tuning:**
+```env
+# Enable production optimizations
+NODE_ENV=production
+LOG_LEVEL=warn
+
+# Reduce memory usage
+NODE_OPTIONS="--max-old-space-size=512"
+```
+
+**Monitoring:**
+- Use Render's built-in metrics
+- Set up alerting for downtime
+- Monitor WhatsApp connection status
+
+**Scaling:**
+- Start with free tier for testing
+- Upgrade to Standard instances for production
+- Consider horizontal scaling for high traffic
+
+#### Alternative Deployment Methods
+
+**Docker Deployment:**
+```dockerfile
+# Dockerfile example
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3001
+CMD ["npm", "start"]
+```
+
+**Manual VPS Deployment:**
+```bash
+# On your server
+git clone <repository>
+cd EasyMessenger
+npm install
+npm run build
+pm2 start ecosystem.config.js
+```
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository
