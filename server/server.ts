@@ -41,7 +41,7 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/chats', chatsRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: express.Request, res: express.Response) => {
   res.json({
     status: 'ok',
     uptime: process.uptime(),
@@ -51,7 +51,7 @@ app.get('/health', (req, res) => {
 });
 
 // SPA fallback - serve React index.html for non-API routes
-app.get('*', (req, res) => {
+app.get('*', (req: express.Request, res: express.Response) => {
   res.sendFile(join(__dirname, 'public', 'index.html'));
 });
 

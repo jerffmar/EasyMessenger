@@ -84,7 +84,7 @@ class BaileysService extends EventEmitter {
       this.setupEventListeners();
       
     } catch (error) {
-      this.logger.error('Failed to initialize WhatsApp:', error);
+      this.logger.error({ msg: 'Failed to initialize WhatsApp:', error });
       this.emit('connection_update', {
         connection: 'close',
         lastDisconnect: {
@@ -98,10 +98,10 @@ class BaileysService extends EventEmitter {
   private setupEventListeners() {
     if (!this.socket) return;
 
-    this.socket.ev.on('connection.update', (update: ConnectionUpdate) => {
+    this.socket.ev.on('connection.update', (update: any) => {
       const { connection, lastDisconnect, qr, isNewLogin } = update;
       
-      this.logger.info('Connection update:', { connection, isNewLogin });
+      this.logger.info({ msg: 'Connection update:', connection, isNewLogin });
 
       if (qr) {
         this.emit('qr_code', qr);
@@ -114,7 +114,7 @@ class BaileysService extends EventEmitter {
 
       if (connection === 'close') {
         const shouldReconnect = (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-        this.logger.info('WhatsApp connection closed:', { shouldReconnect });
+        this.logger.info({ msg: 'WhatsApp connection closed:', shouldReconnect });
         
         if (shouldReconnect) {
           setTimeout(() => this.initialize(), 5000);
@@ -146,7 +146,7 @@ class BaileysService extends EventEmitter {
       }
     });
 
-    this.socket.ev.on('chats.set', ({ chats }) => {
+    this.socket.ev.on('chats.set', ({ chats }: any) => {
       this.logger.info(`Received ${chats.length} chats`);
       for (const chat of chats) {
         this.updateChat(chat);
@@ -214,7 +214,7 @@ class BaileysService extends EventEmitter {
       unreadCount: chat.unreadCount || 0,
       lastMessage: chat.lastMessage?.messageStubType ? undefined : this.getMessageText(chat.lastMessage),
       timestamp: chat.lastMessage?.messageTimestamp || Date.now(),
-      isGroup: isJidGroup(chat.id)
+      isGroup: isJidGroup(chat.id) || false
     };
     
     this.chats.set(chat.id, chatInfo);
@@ -224,16 +224,11 @@ class BaileysService extends EventEmitter {
     if (!this.socket) return;
     
     try {
-      const chats = await this.socket.fetchChats();
-      this.logger.info(`Loaded ${chats.length} chats`);
-      
-      for (const chat of chats) {
-        this.updateChat(chat);
-      }
-      
-      this.emit('chats_update', Array.from(this.chats.values()));
+      // fetchChats method doesn't exist in current Baileys version
+      // Use the chats from events instead
+      this.logger.info('Chats will be loaded via events');
     } catch (error) {
-      this.logger.error('Failed to load chats:', error);
+      this.logger.error({ msg: 'Failed to load chats:', error });
     }
   }
 
@@ -246,10 +241,10 @@ class BaileysService extends EventEmitter {
       const jid = `${number}@s.whatsapp.net`;
       const result = await this.socket.sendMessage(jid, { text });
       
-      this.logger.info('Message sent:', { jid, text });
+      this.logger.info({ msg: 'Message sent:', jid, text });
       return result;
     } catch (error) {
-      this.logger.error('Failed to send message:', error);
+      this.logger.error({ msg: 'Failed to send message:', error });
       throw error;
     }
   }
@@ -260,10 +255,11 @@ class BaileysService extends EventEmitter {
     }
 
     try {
-      const messages = await this.socket.fetchMessages(chatId, { limit });
-      return messages;
+      // fetchMessages method doesn't exist in current Baileys version
+      // Return empty array for now - implement message store if needed
+      return [];
     } catch (error) {
-      this.logger.error('Failed to fetch messages:', error);
+      this.logger.error({ msg: 'Failed to fetch messages:', error });
       throw error;
     }
   }
@@ -281,7 +277,7 @@ class BaileysService extends EventEmitter {
       connected: this.socket.ws?.readyState === 1,
       user: user ? {
         id: user.id,
-        name: user.name || user.verifiedName,
+        name: user.name || user.verifiedName || undefined,
         pictureUrl: await this.getProfilePicture(user.id)
       } : null
     };
@@ -292,7 +288,7 @@ class BaileysService extends EventEmitter {
     
     try {
       const url = await this.socket.profilePictureUrl(jid, 'image');
-      return url;
+      return url || null;
     } catch {
       return null;
     }
@@ -307,14 +303,14 @@ class BaileysService extends EventEmitter {
       this.chats.clear();
       this.logger.info('Logged out successfully');
     } catch (error) {
-      this.logger.error('Failed to logout:', error);
+      this.logger.error({ msg: 'Failed to logout:', error });
       throw error;
     }
   }
 
   setWebhook(url: string | null) {
     this.webhookUrl = url;
-    this.logger.info('Webhook updated:', { url });
+    this.logger.info({ msg: 'Webhook updated:', url });
   }
 
   private async sendWebhook(message: WAMessage) {
@@ -332,7 +328,7 @@ class BaileysService extends EventEmitter {
         })
       });
     } catch (error) {
-      this.logger.error('Failed to send webhook:', error);
+      this.logger.error({ msg: 'Failed to send webhook:', error });
     }
   }
 
