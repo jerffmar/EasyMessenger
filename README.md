@@ -307,10 +307,14 @@ npm start
 ```env
 # Node.js Environment
 NODE_ENV=production
-PORT=3001
+PORT=10000
 
 # Session Configuration
 SESSION_PATH=/opt/render/project/src/auth_info
+
+# Frontend Configuration (for production)
+VITE_API_URL=""
+VITE_SOCKET_URL=""
 
 # Logging
 LOG_LEVEL=info
@@ -338,7 +342,7 @@ SOCKET_URL=
 **Auto-Deploy**: Enable for automatic deployments on push
 
 **How it works:**
-- The backend serves the API on port 3001
+- The backend serves the API on port 10000
 - The built frontend files are served from `/public` directory
 - All requests to the root domain serve the React app
 - API requests to `/api/*` are handled by the backend
@@ -419,7 +423,7 @@ SESSION_BACKUP_URL=
 ```bash
 # Check service logs
 # Common issues:
-# - Port conflicts: Ensure PORT environment variable is set to 3001
+# - Port conflicts: Ensure PORT environment variable is set to 10000
 # - Permission issues: Check file permissions for auth_info directory
 # - CORS errors: Verify frontend URL is in CORS allowlist
 ```
