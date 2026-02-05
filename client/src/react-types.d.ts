@@ -1,5 +1,5 @@
 declare module 'react' {
-  export function useState<T>(initial: T): [T, (value: T) => void];
+  export function useState<T>(initial: T): [T, (value: T | ((prev: T) => T)) => void];
   export function useEffect(effect: () => void | (() => void), deps?: any[]): void;
   export function useRef<T>(initial: T): { current: T };
   export function useCallback<T extends Function>(callback: T, deps: any[]): T;
