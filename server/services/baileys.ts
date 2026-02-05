@@ -76,7 +76,7 @@ class BaileysService extends EventEmitter {
         syncFullHistory: false,
         markOnlineOnConnect: true,
         generateHighQualityLinkPreview: true,
-        getMessage: async (key) => {
+        getMessage: async (key: any) => {
           return undefined; // Implement message store if needed
         }
       });
@@ -124,13 +124,13 @@ class BaileysService extends EventEmitter {
       this.emit('connection_update', update);
     });
 
-    this.socket.ev.on('creds.update', saveCreds => {
+    this.socket.ev.on('creds.update', (saveCreds: any) => {
       if (this.authState?.saveCreds) {
         this.authState.saveCreds(saveCreds);
       }
     });
 
-    this.socket.ev.on('messages.upsert', ({ messages, type }) => {
+    this.socket.ev.on('messages.upsert', ({ messages, type }: any) => {
       if (type === 'notify' && messages.length > 0) {
         for (const message of messages) {
           if (!message.key.fromMe && !isJidBroadcast(message.key.remoteJid)) {
@@ -152,21 +152,24 @@ class BaileysService extends EventEmitter {
         this.updateChat(chat);
       }
       this.emit('chats_update', Array.from(this.chats.values()));
-    });
+    }) as any;
 
-    this.socket.ev.on('chats.upsert', (chats) => {
+    this.socket.ev.on('chats.upsert', (chats: any) => {
       for (const chat of chats) {
         this.updateChat(chat);
       }
       this.emit('chats_update', Array.from(this.chats.values()));
     });
 
-    this.socket.ev.on('chats.update', (updates) => {
+    this.socket.ev.on('chats.update', (updates: any) => {
       for (const update of updates) {
-        const chat = this.chats.get(update.id);
+        const chatId = update.id;
+        if (!chatId) continue;
+        
+        const chat = this.chats.get(chatId);
         if (chat) {
           Object.assign(chat, update);
-          this.chats.set(update.id, chat);
+          this.chats.set(chatId, chat);
         }
       }
       this.emit('chats_update', Array.from(this.chats.values()));
@@ -175,8 +178,9 @@ class BaileysService extends EventEmitter {
 
   private handleNewMessage(message: WAMessage) {
     const chatId = message.key.remoteJid;
-    const chat = this.chats.get(chatId);
+    if (!chatId) return;
     
+    const chat = this.chats.get(chatId);
     if (chat) {
       chat.unreadCount++;
       chat.lastMessage = this.getMessageText(message);
@@ -208,16 +212,19 @@ class BaileysService extends EventEmitter {
   }
 
   private updateChat(chat: any) {
+    const chatId = chat.id;
+    if (!chatId) return;
+    
     const chatInfo: ChatInfo = {
-      id: chat.id,
-      name: chat.name || chat.id.replace('@s.whatsapp.net', '').replace('@g.us', ''),
+      id: chatId,
+      name: chat.name || chatId.replace('@s.whatsapp.net', '').replace('@g.us', ''),
       unreadCount: chat.unreadCount || 0,
       lastMessage: chat.lastMessage?.messageStubType ? undefined : this.getMessageText(chat.lastMessage),
       timestamp: chat.lastMessage?.messageTimestamp || Date.now(),
-      isGroup: isJidGroup(chat.id) || false
+      isGroup: isJidGroup(chatId) || false
     };
     
-    this.chats.set(chat.id, chatInfo);
+    this.chats.set(chatId, chatInfo);
   }
 
   private async loadChats() {
@@ -274,7 +281,7 @@ class BaileysService extends EventEmitter {
 
     const user = this.socket.user;
     return {
-      connected: this.socket.ws?.readyState === 1,
+      connected: (this.socket.ws as any)?.readyState === 1,
       user: user ? {
         id: user.id,
         name: user.name || user.verifiedName || undefined,
