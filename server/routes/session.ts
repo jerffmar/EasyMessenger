@@ -1,0 +1,37 @@
+import { Router, Request, Response } from 'express';
+import { baileysService } from '../services/baileys.js';
+
+const router = Router();
+
+// Get session status
+router.get('/status', async (req: Request, res: Response) => {
+  try {
+    const status = await baileysService.getConnectionStatus();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get session status' });
+  }
+});
+
+// Logout from session
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    await baileysService.logout();
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to logout' });
+  }
+});
+
+// Set webhook URL
+router.post('/webhook', (req: Request, res: Response) => {
+  try {
+    const { url } = req.body;
+    baileysService.setWebhook(url || null);
+    res.json({ message: 'Webhook updated successfully', url });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to set webhook' });
+  }
+});
+
+export { router as sessionRoutes };
