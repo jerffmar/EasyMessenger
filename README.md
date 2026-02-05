@@ -295,7 +295,7 @@ Render is a recommended platform for deploying EasyMessenger. Follow these steps
 
 **Build Command:**
 ```bash
-npm install && cd client && npm install && cd .. && npm run build
+cp app-package.json package.json && npm install && cd client && npm install && cd .. && npm run build
 ```
 
 **Start Command:**

@@ -3,7 +3,7 @@ services:
     name: whatsapp-manager
     env: node
     plan: free
-    buildCommand: npm install && cd client && npm install && cd .. && npm run build
+    buildCommand: cp app-package.json package.json && npm install && cd client && npm install && cd .. && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
