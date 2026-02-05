@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node node_modules/vite/dist/cli.js",
+    "dev": "node --eval \"require('vite').run(['dev'])\"",
     "build": "tsc && node --eval \"require('vite').run(['build'])\"",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "node node_modules/vite/dist/cli.js preview"
+    "preview": "node --eval \"require('vite').run(['preview'])\""
   },
   "dependencies": {
     "react": "^18.2.0",
