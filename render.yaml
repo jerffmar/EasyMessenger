@@ -13,9 +13,9 @@ services:
       - key: SESSION_PATH
         value: /opt/render/project/src/auth_info
       - key: VITE_API_URL
-        value: ""
+        value: https://whatsapp-manager.onrender.com
       - key: VITE_SOCKET_URL
-        value: ""
+        value: https://whatsapp-manager.onrender.com
     disk:
       name: auth-disk
       mountPath: /opt/render/project/src/auth_info
