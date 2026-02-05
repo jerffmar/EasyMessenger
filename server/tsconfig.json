@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "node",
-    "outDir": "../dist",
+    "outDir": "../lib",
     "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
@@ -20,6 +20,6 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "lib"
   ]
 }
