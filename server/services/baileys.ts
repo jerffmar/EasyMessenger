@@ -146,13 +146,13 @@ class BaileysService extends EventEmitter {
       }
     });
 
-    this.socket.ev.on('chats.set', ({ chats }: any) => {
+    (this.socket.ev as any).on('chats.set', ({ chats }: any) => {
       this.logger.info(`Received ${chats.length} chats`);
       for (const chat of chats) {
         this.updateChat(chat);
       }
       this.emit('chats_update', Array.from(this.chats.values()));
-    }) as any;
+    });
 
     this.socket.ev.on('chats.upsert', (chats: any) => {
       for (const chat of chats) {
