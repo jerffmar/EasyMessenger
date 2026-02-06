@@ -1,5 +1,5 @@
 import express from 'express';
-import { initializeAuth, validatePassword } from '../services/auth';
+import { initializeAuth, validatePassword } from '../services/auth.js';
 
 const router = express.Router();
 
