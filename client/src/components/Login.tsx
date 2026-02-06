@@ -39,7 +39,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
               <div className="relative">
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Digite a senha de 32 caracteres"
@@ -47,14 +47,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
                   disabled={isLoading}
                   autoComplete="current-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
               </div>
               <p className="mt-2 text-xs text-slate-400">
                 Insira a senha de 32 caracteres fornecida no deploy
