@@ -11,8 +11,7 @@ import {
   Check, 
   X, 
   Loader2,
-  Users,
-  Menu
+  Users
 } from 'lucide-react';
 
 // Components
@@ -229,7 +228,7 @@ function App() {
     return (
       <div className="flex min-h-screen bg-[#F8FAFC] items-center justify-center">
         <div className="flex items-center space-x-3">
-          <RefreshCcw className="animate-spin text-emerald-500" size={24} />
+          <Loader2 className="animate-spin text-emerald-500" size={24} />
           <span className="text-slate-600">Carregando...</span>
         </div>
       </div>
@@ -254,7 +253,7 @@ function App() {
         <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-4 mb-2 mt-4">Menu Principal</div>
           <SidebarItem 
-            icon={LayoutDashboard} 
+            icon={MessageSquare} 
             label="Dashboard" 
             active={activeTab === 'dashboard'} 
             onClick={() => setActiveTab('dashboard')} 
@@ -267,7 +266,7 @@ function App() {
             badge={connectionStatus.connected ? undefined : "Ação Necessária"}
           />
           <SidebarItem 
-            icon={MessageSquare} 
+            icon={Users} 
             label="Live Chat" 
             active={activeTab === 'chat'} 
             onClick={() => setActiveTab('chat')} 
@@ -275,13 +274,13 @@ function App() {
           
           <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-4 mb-2 mt-8">Desenvolvedor</div>
           <SidebarItem 
-            icon={Book} 
+            icon={MessageSquare} 
             label="Docs & API" 
             active={activeTab === 'api'} 
             onClick={() => setActiveTab('api')} 
           />
           <SidebarItem 
-            icon={Database} 
+            icon={Settings} 
             label="Logs & Webhooks" 
             active={activeTab === 'logs'} 
             onClick={() => setActiveTab('logs')} 
@@ -342,8 +341,8 @@ function App() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <MetricCard title="Mensagens Hoje" value="1,245" icon={Send} trend="+12%" trendUp={true} />
               <MetricCard title="Sessões Ativas" value="1" icon={Smartphone} />
-              <MetricCard title="Erros de Envio" value="0.4%" icon={AlertCircle} trend="-2%" trendUp={true} />
-              <MetricCard title="Tempo Médio" value="1.2s" icon={Activity} />
+              <MetricCard title="Erros de Envio" value="0.4%" icon={X} trend="-2%" trendUp={true} />
+              <MetricCard title="Tempo Médio" value="1.2s" icon={Loader2} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -373,21 +372,21 @@ function App() {
                 <div className="mt-8 space-y-6 relative z-10">
                   <div className="flex justify-between items-center border-b border-white/10 pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white/5 rounded-lg"><Server size={18} className="text-emerald-400" /></div>
+                      <div className="p-2 bg-white/5 rounded-lg"><Settings size={18} className="text-emerald-400" /></div>
                       <span className="text-sm font-medium text-slate-300">API Server</span>
                     </div>
                     <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">ONLINE</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-white/10 pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white/5 rounded-lg"><Database size={18} className="text-blue-400" /></div>
+                      <div className="p-2 bg-white/5 rounded-lg"><Users size={18} className="text-blue-400" /></div>
                       <span className="text-sm font-medium text-slate-300">PostgreSQL</span>
                     </div>
                     <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">ONLINE</span>
                   </div>
                   <div className="flex justify-between items-center pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white/5 rounded-lg"><RefreshCcw size={18} className="text-amber-400" /></div>
+                      <div className="p-2 bg-white/5 rounded-lg"><Loader2 size={18} className="text-amber-400" /></div>
                       <span className="text-sm font-medium text-slate-300">Baileys Socket</span>
                     </div>
                     <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">SYNCED</span>
@@ -410,7 +409,7 @@ function App() {
                 {connectionStatus.connected ? (
                   <div className="text-center">
                     <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <CheckCircle className="text-emerald-500" size={48} />
+                      <Check className="text-emerald-500" size={48} />
                     </div>
                     <h4 className="text-xl font-bold text-slate-900 mb-2">Tudo pronto!</h4>
                     <p className="text-slate-500 mb-8">O Baileys está conectado e sincronizando mensagens.</p>
@@ -436,7 +435,7 @@ function App() {
                       <div className="absolute top-4 left-4 right-4 h-0.5 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-scan"></div>
                     </div>
                     <div className="mt-8 flex items-center space-x-2 text-slate-400 text-sm">
-                      <RefreshCcw size={14} className="animate-spin" />
+                      <Loader2 size={14} className="animate-spin" />
                       <span>Atualizando em {Math.ceil(qrProgress / 10)}s</span>
                     </div>
                     {/* Hover Hint */}
@@ -464,7 +463,7 @@ function App() {
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-100 flex items-center space-x-3">
-                <div className="bg-slate-100 p-2 rounded-lg"><Activity size={18} className="text-slate-600" /></div>
+                <div className="bg-slate-100 p-2 rounded-lg"><Loader2 size={18} className="text-slate-600" /></div>
                 <div>
                   <div className="text-sm font-bold text-slate-700">Escaneie</div>
                   <div className="text-xs text-slate-400">Aponte a câmera</div>
@@ -474,13 +473,13 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'chat' && <LiveChat chats={chats} />}
-        {activeTab === 'api' && <ApiPlayground endpoints={API_ENDPOINTS} />}
+        {activeTab === 'chat' && <LiveChat chats={chats} isConnected={connectionStatus.connected} />}
+        {activeTab === 'api' && <ApiPlayground />}
         {activeTab === 'logs' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
             <h3 className="font-bold text-slate-800 mb-4">Logs & Webhooks</h3>
             <div className="text-slate-500 text-center py-12">
-              <Database size={48} className="mx-auto mb-4 text-slate-300" />
+              <Settings size={48} className="mx-auto mb-4 text-slate-300" />
               <p>Funcionalidade de logs em desenvolvimento</p>
             </div>
           </div>
