@@ -45,7 +45,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
         <div className="relative">
-          <div className="w-48 h-48 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-slate-200">
+          <div className="w-64 h-64 bg-slate-100 rounded-2xl flex items-center justify-center border-2 border-slate-200">
             {isLoading ? (
               <Loader2 className="text-emerald-500 animate-spin" size={48} />
             ) : (
@@ -67,7 +67,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
         <div className="relative">
-          <div className="w-48 h-48 bg-red-50 rounded-2xl flex items-center justify-center border-2 border-red-200">
+          <div className="w-64 h-64 bg-red-50 rounded-2xl flex items-center justify-center border-2 border-red-200">
             <div className="text-center">
               <span className="text-4xl mb-2">🔴</span>
               <p className="text-red-600 font-medium text-sm">Servidor Offline</p>
@@ -93,17 +93,22 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
       ) : (
         <>
           <div className="relative group">
-            <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-emerald-200">
+            <div className="w-64 h-64 bg-black rounded-2xl flex items-center justify-center p-4">
               {qrImage ? (
-                <img 
-                  src={qrImage} 
-                  alt="WhatsApp QR Code" 
-                  className="w-48 h-48 rounded-lg"
-                />
-              ) : (
-                <div className="w-48 h-48 flex items-center justify-center bg-slate-50 rounded-lg">
-                  <Loader2 className="text-emerald-500 animate-spin" size={32} />
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img 
+                    src={qrImage} 
+                    alt="WhatsApp QR Code" 
+                    className="w-full h-full object-contain rounded-lg"
+                  />
+                  {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 rounded-2xl">
+                      <Loader2 className="text-emerald-500 animate-spin" size={48} />
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <Loader2 className="text-emerald-500 animate-spin" size={48} />
               )}
             </div>
             
@@ -122,7 +127,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
             <div className="absolute top-6 left-6 right-6 h-0.5 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-scan"></div>
           </div>
 
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <p className="text-sm text-slate-600 font-medium mb-2">Escaneie com WhatsApp</p>
             <div className="text-xs text-slate-400 space-y-1">
               <p>1. Abra o WhatsApp no celular</p>
