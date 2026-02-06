@@ -15,10 +15,16 @@ let currentPassword: string | null = null;
 
 export function initializeAuth(): string {
   // Check if password is already set in environment
-  if (typeof globalThis !== 'undefined' && (globalThis as any).process?.env?.API_PASSWORD) {
-    currentPassword = (globalThis as any).process.env.API_PASSWORD;
-    console.log('🔐 Using password from environment variables');
-    return currentPassword!;
+  try {
+    // Safe access to process.env
+    const g = globalThis as any;
+    if (g && g.process && g.process.env && g.process.env.API_PASSWORD) {
+      currentPassword = g.process.env.API_PASSWORD;
+      console.log('🔐 Using password from environment variables');
+      if (currentPassword) return currentPassword;
+    }
+  } catch (error) {
+    // Process not available, continue with generated password
   }
   
   // Generate new password
