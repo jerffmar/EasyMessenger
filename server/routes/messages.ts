@@ -1,10 +1,10 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { baileysService } from '../services/baileys.js';
 
-const router = Router();
+const router = express.Router();
 
 // Send text message
-router.post('/text', async (req: Request, res: Response) => {
+router.post('/text', async (req: any, res: any) => {
   try {
     const { number, text } = req.body;
 

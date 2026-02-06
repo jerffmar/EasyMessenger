@@ -4,7 +4,7 @@ import { baileysService } from '../services/baileys.js';
 const router = express.Router();
 
 // Initialize connection
-router.post('/connect', async (req: Request, res: Response) => {
+router.post('/connect', async (req: any, res: any) => {
   try {
     await baileysService.initialize();
     res.json({ message: 'Connection initialized successfully' });
@@ -14,7 +14,7 @@ router.post('/connect', async (req: Request, res: Response) => {
 });
 
 // Get QR code
-router.get('/qr', async (req: Request, res: Response) => {
+router.get('/qr', async (req: any, res: any) => {
   try {
     const status = await baileysService.getConnectionStatus();
     if (status.connected) {
@@ -33,7 +33,7 @@ router.get('/qr', async (req: Request, res: Response) => {
 });
 
 // Get session status
-router.get('/status', async (req: Request, res: Response) => {
+router.get('/status', async (req: any, res: any) => {
   try {
     const status = await baileysService.getConnectionStatus();
     res.json(status);
@@ -43,7 +43,7 @@ router.get('/status', async (req: Request, res: Response) => {
 });
 
 // Logout from session
-router.post('/logout', async (req: Request, res: Response) => {
+router.post('/logout', async (req: any, res: any) => {
   try {
     await baileysService.logout();
     res.json({ message: 'Logged out successfully' });
@@ -53,7 +53,7 @@ router.post('/logout', async (req: Request, res: Response) => {
 });
 
 // Set webhook URL
-router.post('/webhook', (req: Request, res: Response) => {
+router.post('/webhook', (req: any, res: any) => {
   try {
     const { url } = req.body;
     baileysService.setWebhook(url || null);

@@ -1,10 +1,10 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { baileysService } from '../services/baileys.js';
 
-const router = Router();
+const router = express.Router();
 
 // Get all chats
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: any, res: any) => {
   try {
     const chats = baileysService.getChats();
     res.json(chats);
@@ -18,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Get messages from specific chat
-router.get('/:id/messages', async (req: Request, res: Response) => {
+router.get('/:id/messages', async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
