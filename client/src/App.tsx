@@ -101,7 +101,7 @@ function App() {
     if (activeTab === 'devices' && !connectionStatus.connected) {
       const interval = setInterval(() => {
         setQrProgress(prev => (prev > 0 ? prev - 2 : 100));
-      }, 100);
+      }, 1000); // Changed from 100ms to 1000ms (1 second)
       return () => clearInterval(interval);
     }
   }, [activeTab, connectionStatus.connected]);

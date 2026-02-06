@@ -41,8 +41,10 @@ const api: AxiosInstance = axios.create({
     if (error.response?.status === 401) {
       // Clear invalid token
       localStorage.removeItem('authToken');
-      // Redirect to login by reloading the page
-      window.location.reload();
+      // Only reload if not already on login page to prevent refresh loops
+      if (!window.location.pathname.includes('/login') && !window.location.hash.includes('login')) {
+        window.location.reload();
+      }
     }
     return Promise.reject(error);
   }
