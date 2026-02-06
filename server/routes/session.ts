@@ -20,8 +20,12 @@ router.get('/qr', async (req: Request, res: Response) => {
     if (status.connected) {
       res.json({ qr: null, connected: true });
     } else {
-      // QR code will be emitted via socket events
-      res.json({ qr: 'pending', connected: false });
+      // Return the current QR code if available
+      const currentQR = baileysService.getCurrentQRCode();
+      res.json({ 
+        qr: currentQR || 'pending', 
+        connected: false 
+      });
     }
   } catch (error) {
     res.status(500).json({ error: 'Failed to get QR code' });

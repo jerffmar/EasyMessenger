@@ -44,6 +44,7 @@ class BaileysService extends EventEmitter {
   private chats: Map<string, ChatInfo> = new Map();
   private messages: Map<string, WAMessage[]> = new Map();
   private webhookUrl: string | null = null;
+  private currentQRCode: string | null = null;
 
   constructor() {
     super();
@@ -121,11 +122,13 @@ class BaileysService extends EventEmitter {
       this.logger.info({ msg: 'Connection update:', connection, isNewLogin });
 
       if (qr) {
+        this.currentQRCode = qr;
         this.emit('qr_code', qr);
       }
 
       if (connection === 'open') {
         this.logger.info('WhatsApp connection opened');
+        this.currentQRCode = null; // Clear QR code when connected
         this.loadChats();
       }
 
@@ -318,6 +321,10 @@ class BaileysService extends EventEmitter {
         pictureUrl: await this.getProfilePicture(user.id)
       } : null
     };
+  }
+
+  getCurrentQRCode(): string | null {
+    return this.currentQRCode;
   }
 
   private async getProfilePicture(jid: string): Promise<string | null> {

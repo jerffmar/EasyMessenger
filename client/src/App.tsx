@@ -283,16 +283,11 @@ function App() {
                 ) : (
                   <div className="relative group cursor-pointer" onClick={handleConnect}>
                     <div className="w-64 h-64 border-2 border-slate-100 rounded-2xl p-4 bg-white shadow-sm relative">
-                      {qrCode ? (
-                        <QRCodeDisplay qrCode={qrCode} />
-                      ) : (
-                        <div className="w-full h-full bg-slate-900 pattern-dots opacity-80 rounded-lg flex items-center justify-center">
-                          <Smartphone className="text-white animate-pulse" size={32} />
-                        </div>
-                      )}
-                      
-                      {/* Scan Line */}
-                      <div className="absolute top-4 left-4 right-4 h-0.5 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-scan"></div>
+                      <QRCodeDisplay 
+                        qrCode={qrCode || 'pending'} 
+                        onRefresh={handleConnect}
+                        isLoading={!qrCode}
+                      />
                     </div>
                     <div className="mt-8 flex items-center space-x-2 text-slate-400 text-sm">
                       <Loader2 size={14} className="animate-spin" />

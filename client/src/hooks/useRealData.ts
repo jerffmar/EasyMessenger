@@ -10,6 +10,9 @@ export const useConnectionState = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize socket connection
+    socketService.connect();
+
     const loadInitialStatus = async () => {
       try {
         const status = await apiService.getSessionStatus();
@@ -17,7 +20,9 @@ export const useConnectionState = () => {
         
         if (!status.connected) {
           const qrData = await apiService.getQRCode();
-          setQrCode(qrData.qr);
+          if (qrData.qr && qrData.qr !== 'pending') {
+            setQrCode(qrData.qr);
+          }
         }
       } catch (error) {
         console.error('Failed to load initial status:', error);
