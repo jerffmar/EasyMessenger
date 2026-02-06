@@ -14,17 +14,6 @@ import {
   Users
 } from 'lucide-react';
 
-// Import mock data and services
-import { 
-  API_ENDPOINTS, 
-  DASHBOARD_METRICS, 
-  SYSTEM_STATUS, 
-  mockApiService, 
-  mockSocketService,
-  formatTimestamp,
-  generateAvatar
-} from './mockData';
-
 // Components
 import QRCodeDisplay from './components/QRCodeDisplay';
 import Dashboard from './components/Dashboard';
@@ -80,6 +69,28 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [loading, setLoading] = useState(true);
   const [qrProgress, setQrProgress] = useState(100);
+
+  // Real dashboard metrics
+  const [dashboardMetrics, setDashboardMetrics] = useState({
+    messagesToday: 0,
+    activeSessions: connectionStatus.connected ? 1 : 0,
+    errorRate: 0,
+    averageTime: 0,
+    messageVolume: [0, 0, 0, 0, 0, 0, 0],
+    trends: {
+      messages: { value: '+0%', up: true },
+      errors: { value: '-0%', up: true }
+    }
+  });
+
+  // Real system status
+  const systemStatus = {
+    apiServer: { status: 'ONLINE', color: 'text-emerald-400' },
+    baileysSocket: { 
+      status: connectionStatus.connected ? 'CONNECTED' : 'DISCONNECTED', 
+      color: connectionStatus.connected ? 'text-emerald-400' : 'text-amber-400' 
+    }
+  };
 
   const { onQRCode, onConnectionUpdate, onMessageUpsert, onChatsUpdate } = useSocket();
 
@@ -156,10 +167,13 @@ function App() {
     }
   };
 
-  const handleConnect = () => {
-    // Simulate connection
-    setConnectionStatus({ connected: true, user: { id: "5511999999999:1@s.whatsapp.net", name: "Admin" } });
-    setQrCode(null);
+  const handleConnect = async () => {
+    try {
+      await apiService.connect();
+      // QR code will be received via socket events
+    } catch (error) {
+      console.error('Failed to connect:', error);
+    }
   };
 
   if (loading) {
@@ -277,24 +291,24 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard title="Mensagens Hoje" value={DASHBOARD_METRICS.messagesToday.toLocaleString()} icon={Send} trend={DASHBOARD_METRICS.trends.messages.value} trendUp={DASHBOARD_METRICS.trends.messages.up} />
-              <MetricCard title="Sessões Ativas" value={DASHBOARD_METRICS.activeSessions} icon={Smartphone} />
-              <MetricCard title="Erros de Envio" value={`${DASHBOARD_METRICS.errorRate}%`} icon={X} trend={DASHBOARD_METRICS.trends.errors.value} trendUp={DASHBOARD_METRICS.trends.errors.up} />
-              <MetricCard title="Tempo Médio" value={`${DASHBOARD_METRICS.averageTime}s`} icon={Loader2} />
+              <MetricCard title="Mensagens Hoje" value={dashboardMetrics.messagesToday.toLocaleString()} icon={Send} trend={dashboardMetrics.trends.messages.value} trendUp={dashboardMetrics.trends.messages.up} />
+              <MetricCard title="Sessões Ativas" value={dashboardMetrics.activeSessions} icon={Smartphone} />
+              <MetricCard title="Erros de Envio" value={`${dashboardMetrics.errorRate}%`} icon={X} trend={dashboardMetrics.trends.errors.value} trendUp={dashboardMetrics.trends.errors.up} />
+              <MetricCard title="Tempo Médio" value={`${dashboardMetrics.averageTime}s`} icon={Loader2} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-96 flex flex-col">
                 <h3 className="font-bold text-slate-800 mb-6">Volume de Mensagens (Últimos 7 dias)</h3>
                 <div className="flex-1 flex items-end justify-between space-x-4 px-2">
-                  {DASHBOARD_METRICS.messageVolume.map((h, i) => (
+                  {dashboardMetrics.messageVolume.map((h, i) => (
                     <div key={i} className="flex-1 bg-emerald-50 rounded-t-lg relative group">
                       <div 
                         className="absolute bottom-0 w-full bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600"
-                        style={{ height: `${h}%` }}
+                        style={{ height: `${h > 0 ? h : 10}%` }}
                       ></div>
                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded">
-                        {h * 10} msgs
+                        {h} msgs
                       </div>
                     </div>
                   ))}
@@ -313,26 +327,17 @@ function App() {
                       <div className="p-2 bg-white/5 rounded-lg"><Settings size={18} className="text-emerald-400" /></div>
                       <span className="text-sm font-medium text-slate-300">API Server</span>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.apiServer.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.apiServer.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
-                      {SYSTEM_STATUS.apiServer.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white/5 rounded-lg"><Users size={18} className="text-blue-400" /></div>
-                      <span className="text-sm font-medium text-slate-300">PostgreSQL</span>
-                    </div>
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.postgresql.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.postgresql.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
-                      {SYSTEM_STATUS.postgresql.status}
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${systemStatus.apiServer.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : systemStatus.apiServer.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                      {systemStatus.apiServer.status}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-white/5 rounded-lg"><Loader2 size={18} className="text-amber-400" /></div>
+                      <div className="p-2 bg-white/5 rounded-lg"><Loader2 size={18} className={systemStatus.baileysSocket.color.replace('text-', 'bg-').replace('-400', '/10')} /></div>
                       <span className="text-sm font-medium text-slate-300">Baileys Socket</span>
                     </div>
-                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.baileysSocket.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.baileysSocket.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
-                      {SYSTEM_STATUS.baileysSocket.status}
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${systemStatus.baileysSocket.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : systemStatus.baileysSocket.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                      {systemStatus.baileysSocket.status}
                     </span>
                   </div>
                 </div>

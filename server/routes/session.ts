@@ -3,6 +3,31 @@ import { baileysService } from '../services/baileys.js';
 
 const router = Router();
 
+// Initialize connection
+router.post('/connect', async (req: Request, res: Response) => {
+  try {
+    await baileysService.initialize();
+    res.json({ message: 'Connection initialized successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to initialize connection' });
+  }
+});
+
+// Get QR code
+router.get('/qr', async (req: Request, res: Response) => {
+  try {
+    const status = await baileysService.getConnectionStatus();
+    if (status.connected) {
+      res.json({ qr: null, connected: true });
+    } else {
+      // QR code will be emitted via socket events
+      res.json({ qr: 'pending', connected: false });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get QR code' });
+  }
+});
+
 // Get session status
 router.get('/status', async (req: Request, res: Response) => {
   try {

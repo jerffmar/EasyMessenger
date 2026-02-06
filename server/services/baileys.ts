@@ -42,6 +42,7 @@ class BaileysService extends EventEmitter {
   private sessionPath: string;
   private logger: pino.Logger;
   private chats: Map<string, ChatInfo> = new Map();
+  private messages: Map<string, WAMessage[]> = new Map();
   private webhookUrl: string | null = null;
 
   constructor() {
@@ -196,6 +197,19 @@ class BaileysService extends EventEmitter {
     const chatId = message.key.remoteJid;
     if (!chatId) return;
     
+    // Store message
+    if (!this.messages.has(chatId)) {
+      this.messages.set(chatId, []);
+    }
+    const chatMessages = this.messages.get(chatId)!;
+    chatMessages.push(message);
+    
+    // Keep only last 100 messages per chat
+    if (chatMessages.length > 100) {
+      chatMessages.shift();
+    }
+    
+    // Update chat info
     const chat = this.chats.get(chatId);
     if (chat) {
       chat.unreadCount++;
@@ -278,9 +292,9 @@ class BaileysService extends EventEmitter {
     }
 
     try {
-      // fetchMessages method doesn't exist in current Baileys version
-      // Return empty array for now - implement message store if needed
-      return [];
+      const messages = this.messages.get(chatId) || [];
+      // Return messages in reverse order (newest first) and limit
+      return messages.slice(-limit).reverse();
     } catch (error) {
       this.logger.error({ msg: 'Failed to fetch messages:', error });
       throw error;
@@ -324,6 +338,7 @@ class BaileysService extends EventEmitter {
       await this.socket.logout();
       this.socket = null;
       this.chats.clear();
+      this.messages.clear();
       this.logger.info('Logged out successfully');
     } catch (error) {
       this.logger.error({ msg: 'Failed to logout:', error });

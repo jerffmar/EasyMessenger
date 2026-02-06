@@ -16,9 +16,19 @@ export const apiService = {
   },
 
   // Session endpoints
+  async connect(): Promise<ApiResponse> {
+    const response = await api.post('/api/session/connect');
+    return response.data;
+  },
+
   async getSessionStatus(): Promise<ConnectionStatus> {
     const response = await api.get('/api/session/status');
     return (response.data as ConnectionStatus) || { connected: false, user: null };
+  },
+
+  async getQRCode(): Promise<{ qr: string; connected: boolean }> {
+    const response = await api.get('/api/session/qr');
+    return response.data as { qr: string; connected: boolean };
   },
 
   async logout(): Promise<ApiResponse> {
