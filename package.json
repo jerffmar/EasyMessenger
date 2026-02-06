@@ -10,8 +10,8 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd client && npm run build",
     "build:server": "tsc -p server/tsconfig.json",
-    "start": "node lib/server.js",
-    "postbuild": "cp -r client/dist lib/public && echo 'export { server } from \"./server.js\";' > lib/index.js",
+    "start": "node lib/index.js",
+    "postbuild": "cp -r client/dist lib/public && echo 'import \"./server.js\";' > lib/index.js",
     "install:all": "npm install && cd client && npm install"
   },
   "dependencies": {
