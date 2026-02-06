@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (password: string) => void;
@@ -11,7 +11,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault();
     if (password.trim()) {
       onLogin(password.trim());
