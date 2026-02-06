@@ -1,6 +1,23 @@
 import { io } from 'socket.io-client';
 import { Message, Chat } from '../types';
 
+// Auto-detect server URL based on environment
+const getServerUrl = () => {
+  // Check if VITE_SERVER_URL is set (for production)
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
+  }
+  
+  // Check if we're in production (deployed)
+  if (import.meta.env.MODE === 'production') {
+    // In production, use the same origin as the frontend
+    return window.location.origin;
+  }
+  
+  // Development fallback
+  return 'http://localhost:3001';
+};
+
 interface Socket {
   connected: boolean;
   on(event: string, callback: (...args: any[]) => void): void;
@@ -18,7 +35,7 @@ class SocketService {
       return;
     }
 
-    const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+    const serverUrl = getServerUrl();
     
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],

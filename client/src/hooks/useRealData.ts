@@ -26,6 +26,9 @@ export const useConnectionState = () => {
         }
       } catch (error) {
         console.error('Failed to load initial status:', error);
+        // Set offline state when server is not available
+        setConnectionStatus({ connected: false, user: null });
+        setQrCode('server-offline');
       } finally {
         setLoading(false);
       }

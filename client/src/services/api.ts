@@ -1,7 +1,24 @@
 import axios from 'axios';
 import { ApiResponse, ConnectionStatus, Chat, Message } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Auto-detect API URL based on environment
+const getApiBaseUrl = () => {
+  // Check if VITE_API_URL is set (for production)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Check if we're in production (deployed)
+  if (import.meta.env.MODE === 'production') {
+    // In production, use the same origin as the frontend
+    return window.location.origin;
+  }
+  
+  // Development fallback
+  return 'http://localhost:3001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -14,7 +14,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
 
   React.useEffect(() => {
     const generateQR = async () => {
-      if (!qrCode || qrCode === 'pending') {
+      if (!qrCode || qrCode === 'pending' || qrCode === 'server-offline') {
         setQrImage('');
         setError('');
         return;
@@ -58,6 +58,24 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
               <span>Aguardando conexão</span>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (qrCode === 'server-offline') {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center">
+        <div className="relative">
+          <div className="w-48 h-48 bg-red-50 rounded-2xl flex items-center justify-center border-2 border-red-200">
+            <div className="text-center">
+              <span className="text-4xl mb-2">🔴</span>
+              <p className="text-red-600 font-medium text-sm">Servidor Offline</p>
+            </div>
+          </div>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">
+            <span>Backend indisponível</span>
+          </div>
         </div>
       </div>
     );
