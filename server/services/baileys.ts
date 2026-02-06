@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
-import { makeWASocket, useMultiFileAuthState, DisconnectReason, isJidBroadcast, isJidGroup, WAMessage, WASocket } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, isJidBroadcast, isJidGroup } from '@whiskeysockets/baileys';
+import type { WAMessage, WASocket } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
 import { existsSync, mkdirSync } from 'fs';
