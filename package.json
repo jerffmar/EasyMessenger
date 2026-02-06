@@ -9,7 +9,7 @@
     "client:dev": "cd client && npm run dev",
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd client && npm run build",
-    "build:server": "tsc -p server/tsconfig.json",
+    "build:server": "cp server/server.js lib/server.js && cp -r server/services lib/ && cp -r server/routes lib/",
     "start": "node lib/index.js",
     "postbuild": "cp -r client/dist lib/public && echo 'import \"./server.js\";' > lib/index.js",
     "install:all": "npm install && cd client && npm install"

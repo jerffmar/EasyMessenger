@@ -1,5 +1,5 @@
-import express from 'express';
-import { initializeAuth, validatePassword } from '../services/auth';
+const express = require('express');
+const { initializeAuth, validatePassword } = require('../services/auth');
 
 const router = express.Router();
 
@@ -7,7 +7,7 @@ const router = express.Router();
 const systemPassword = initializeAuth();
 
 // Login endpoint
-router.post('/login', (req: any, res: any) => {
+router.post('/login', (req, res) => {
   const { password } = req.body;
   
   if (!password) {
@@ -32,7 +32,7 @@ router.post('/login', (req: any, res: any) => {
 });
 
 // Check authentication status
-router.get('/status', (req: any, res: any) => {
+router.get('/status', (req, res) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader) {
@@ -51,4 +51,4 @@ router.get('/status', (req: any, res: any) => {
   });
 });
 
-export default router;
+module.exports = router;

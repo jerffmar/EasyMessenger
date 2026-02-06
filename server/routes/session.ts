@@ -1,7 +1,7 @@
-import { Router, Request, Response } from 'express';
+import express from 'express';
 import { baileysService } from '../services/baileys.js';
 
-const router = Router();
+const router = express.Router();
 
 // Initialize connection
 router.post('/connect', async (req: Request, res: Response) => {

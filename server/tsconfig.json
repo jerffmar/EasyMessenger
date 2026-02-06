@@ -5,18 +5,19 @@
     "moduleResolution": "node",
     "outDir": "../lib",
     "rootDir": ".",
-    "strict": true,
+    "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts",
+    "**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
