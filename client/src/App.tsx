@@ -96,13 +96,22 @@ function App() {
     }
   };
 
-  // Mock QR Progress
+  // Mock QR Progress - Stop when device is connected
   useEffect(() => {
+    // Only run timer if on devices tab AND no device is connected
     if (activeTab === 'devices' && !connectionStatus.connected) {
+      console.log('Starting QR progress timer - device not connected');
       const interval = setInterval(() => {
         setQrProgress(prev => (prev > 0 ? prev - 2 : 100));
-      }, 1000); // Changed from 100ms to 1000ms (1 second)
-      return () => clearInterval(interval);
+      }, 1000); // Update every 1 second
+      return () => {
+        clearInterval(interval);
+        console.log('QR progress timer stopped');
+      };
+    } else if (connectionStatus.connected) {
+      // Reset progress when device connects
+      console.log('Device connected, resetting QR progress');
+      setQrProgress(100);
     }
   }, [activeTab, connectionStatus.connected]);
 
