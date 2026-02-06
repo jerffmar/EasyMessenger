@@ -1,10 +1,11 @@
 import React from 'react';
 import { Send, Smartphone, X, Loader2, Users, Settings, Check } from 'lucide-react';
-import { useDashboardMetrics } from '../hooks/useMockData';
+import { useDashboardMetrics } from '../hooks/useRealData';
+import { ConnectionStatus, Chat } from '../types';
 
 interface DashboardProps {
-  connectionStatus: any;
-  chats: any[];
+  connectionStatus: ConnectionStatus;
+  chats: Chat[];
 }
 
 const MetricCard = ({ title, value, icon: Icon, trend, trendUp }: any) => (

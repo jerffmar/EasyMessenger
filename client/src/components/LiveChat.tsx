@@ -1,11 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chat, Message } from '../types';
 import { apiService } from '../services/api';
-import { useSocket } from '../hooks/useSocket';
+import { useChatMessages } from '../hooks/useRealData';
 import { Send, MessageSquare, Users, Check, Settings, X, Loader2 } from 'lucide-react';
-
-// Import mock data
-import { MOCK_CHATS, formatTimestamp, generateAvatar } from '../mockData';
 
 interface LiveChatProps {
   chats: Chat[];
@@ -13,19 +10,28 @@ interface LiveChatProps {
 }
 
 const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
-  const [selectedChatId, setSelectedChatId] = useState<string>(MOCK_CHATS[0].id);
+  const [selectedChatId, setSelectedChatId] = useState<string>('');
   const [inputText, setInputText] = useState('');
   
-  // Use mock data or real data
-  const displayChats = chats.length > 0 ? chats : MOCK_CHATS;
-  const selectedChat = displayChats.find((c: any) => c.id === selectedChatId) || displayChats[0];
+  // Use real chats or fallback to first chat
+  const displayChats = chats.length > 0 ? chats : [];
+  const selectedChat = displayChats.find((c) => c.id === selectedChatId) || displayChats[0];
+  
+  // Get messages for selected chat using real hook
+  const { messages, loading: messagesLoading } = useChatMessages(selectedChatId);
+
+  // Auto-select first chat when available
+  useEffect(() => {
+    if (displayChats.length > 0 && !selectedChatId) {
+      setSelectedChatId(displayChats[0].id);
+    }
+  }, [displayChats, selectedChatId]);
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || !isConnected) return;
+    if (!inputText.trim() || !isConnected || !selectedChatId) return;
     
     try {
-      // Here you would send the message via API
-      console.log('Sending message:', inputText);
+      await apiService.sendTextMessage(selectedChatId, inputText);
       setInputText('');
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -47,28 +53,30 @@ const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {displayChats.map((chat: any) => (
+          {displayChats.map((chat) => (
             <div 
               key={chat.id}
               onClick={() => setSelectedChatId(chat.id)}
               className={`p-4 flex items-center space-x-4 cursor-pointer border-b border-slate-50 hover:bg-slate-50 transition-colors ${selectedChatId === chat.id ? 'bg-emerald-50/50' : ''}`}
             >
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold shadow-sm">
-                {chat.name.charAt(0)}
+                {chat.name?.charAt(0) || '?'}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-1">
-                  <h4 className="font-semibold text-slate-800 text-sm truncate">{chat.name}</h4>
-                  <span className="text-xs text-slate-400">{chat.timestamp}</span>
+                  <h4 className="font-semibold text-slate-800 text-sm truncate">{chat.name || 'Unknown'}</h4>
+                  <span className="text-xs text-slate-400">
+                    {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}
+                  </span>
                 </div>
                 <p className="text-sm text-slate-500 truncate flex items-center">
                   {selectedChatId === chat.id && <Check size={14} className="text-blue-400 mr-1" />}
-                  {chat.lastMessage}
+                  {chat.lastMessage || 'Nenhuma mensagem'}
                 </p>
               </div>
-              {chat.unread > 0 && (
+              {chat.unreadCount > 0 && (
                 <div className="bg-emerald-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                  {chat.unread}
+                  {chat.unreadCount}
                 </div>
               )}
             </div>
@@ -81,10 +89,10 @@ const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
         <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center shadow-sm z-10">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-semibold cursor-pointer">
-              {selectedChat.name.charAt(0)}
+              {selectedChat?.name?.charAt(0) || '?'}
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800">{selectedChat.name}</h3>
+              <h3 className="font-semibold text-slate-800">{selectedChat?.name || 'Selecione um chat'}</h3>
               <p className="text-xs text-slate-500">{isConnected ? 'Online agora' : 'Desconectado'}</p>
             </div>
           </div>
@@ -95,16 +103,30 @@ const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4" style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundRepeat: 'repeat' }}>
-          {selectedChat.messages && selectedChat.messages.length > 0 ? (
-            selectedChat.messages.map((msg: any) => (
-              <div key={msg.id} className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}>
+          {messagesLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Loader2 className="animate-spin mx-auto mb-4 text-slate-300" size={48} />
+                <p className="text-slate-500">Carregando mensagens...</p>
+              </div>
+            </div>
+          ) : messages && messages.length > 0 ? (
+            messages.map((msg: Message) => (
+              <div key={msg.key.id} className={`flex ${msg.key.fromMe ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[70%] rounded-lg px-4 py-2 shadow-sm text-sm relative ${
-                  msg.fromMe ? 'bg-[#d9fdd3] text-slate-800' : 'bg-white text-slate-800'
+                  msg.key.fromMe ? 'bg-[#d9fdd3] text-slate-800' : 'bg-white text-slate-800'
                 }`}>
-                  <p className="mr-4">{msg.text}</p>
+                  <p className="mr-4">
+                    {msg.message?.conversation || 
+                     msg.message?.extendedTextMessage?.text || 
+                     msg.message?.imageMessage?.caption || 
+                     'Media message'}
+                  </p>
                   <div className="flex justify-end items-center space-x-1 mt-1 opacity-70">
-                    <span className="text-[10px]">{msg.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    {msg.fromMe && <Check size={12} className="text-blue-500" />}
+                    <span className="text-[10px]">
+                      {new Date(msg.messageTimestamp * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                    {msg.key.fromMe && <Check size={12} className="text-blue-500" />}
                   </div>
                 </div>
               </div>

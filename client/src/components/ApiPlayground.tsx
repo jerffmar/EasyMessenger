@@ -1,8 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Check, Settings, X, Loader2 } from 'lucide-react';
+import { apiService } from '../services/api';
 
-// Import mock data
-import { API_ENDPOINTS, mockApiService } from '../mockData';
+// Define endpoints locally since we removed mockData
+const API_ENDPOINTS = [
+  {
+    id: 'health',
+    method: 'GET',
+    path: '/health',
+    title: 'Health Check',
+    description: 'Verifica se a API está online e retorna o tempo de atividade.',
+    params: [],
+    responseEx: {
+      status: "ok",
+      uptime: 1245.5
+    }
+  },
+  {
+    id: 'qr',
+    method: 'GET',
+    path: '/api/session/qr',
+    title: 'Obter QR Code',
+    description: 'Retorna a string do QR Code para autenticação. Use uma lib de QR para renderizar.',
+    params: [],
+    responseEx: {
+      qr: "2@jKO...==",
+      connected: false
+    }
+  },
+  {
+    id: 'status',
+    method: 'GET',
+    path: '/api/session/status',
+    title: 'Status da Sessão',
+    description: 'Retorna o estado atual da conexão do WhatsApp e dados do usuário.',
+    params: [],
+    responseEx: {
+      connected: true,
+      user: { id: "5511999999999:1@s.whatsapp.net", name: "Admin" },
+      device: "Ativo"
+    }
+  },
+  {
+    id: 'send-text',
+    method: 'POST',
+    path: '/api/messages/text',
+    title: 'Enviar Texto',
+    description: 'Envia uma mensagem de texto simples para um número especificado.',
+    params: [
+      { name: 'number', type: 'string', required: true, desc: 'Número com DDI e DDD (ex: 5511999999999)' },
+      { name: 'text', type: 'string', required: true, desc: 'Conteúdo da mensagem' }
+    ],
+    bodyEx: {
+      number: "5511999999999",
+      text: "Olá! Mensagem enviada via API."
+    },
+    responseEx: {
+      status: "success",
+      message_id: "3EB0...",
+      timestamp: 1678900000
+    }
+  },
+  {
+    id: 'logout',
+    method: 'POST',
+    path: '/api/session/logout',
+    title: 'Logout',
+    description: 'Encerra a sessão atual, apaga os dados de autenticação e reinicia o socket.',
+    params: [],
+    responseEx: {
+      status: "success",
+      message: "Sessão encerrada"
+    }
+  }
+];
 
 const ApiPlayground: React.FC = () => {
   const [selectedEndpoint, setSelectedEndpoint] = useState(API_ENDPOINTS[0]);
@@ -20,35 +91,31 @@ const ApiPlayground: React.FC = () => {
   const handleSimulateRequest = async () => {
     setLoading(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock response based on endpoint
-      let mockResponse;
+      let apiResponse;
       switch (selectedEndpoint.id) {
         case 'health':
-          mockResponse = await mockApiService.getHealth();
+          apiResponse = await apiService.healthCheck();
           break;
         case 'qr':
-          mockResponse = await mockApiService.getQRCode();
+          apiResponse = await apiService.getQRCode();
           break;
         case 'status':
-          mockResponse = await mockApiService.getSessionStatus();
+          apiResponse = await apiService.getSessionStatus();
           break;
         case 'send-text':
           const body = JSON.parse(requestBody);
-          mockResponse = await mockApiService.sendMessage(body.number, body.text);
+          apiResponse = await apiService.sendTextMessage(body.number, body.text);
           break;
         case 'logout':
-          mockResponse = await mockApiService.logout();
+          apiResponse = await apiService.logout();
           break;
         default:
-          mockResponse = selectedEndpoint.responseEx;
+          apiResponse = { error: 'Endpoint not implemented' };
       }
       
-      setResponse(mockResponse);
+      setResponse(apiResponse);
     } catch (error) {
-      setResponse({ error: 'Failed to execute request' });
+      setResponse({ error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setLoading(false);
     }
@@ -60,169 +127,106 @@ const ApiPlayground: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getMethodColor = (method: string) => {
-    switch(method) {
-      case 'GET': return 'bg-blue-100 text-blue-700';
-      case 'POST': return 'bg-emerald-100 text-emerald-700';
-      default: return 'bg-slate-100 text-slate-700';
-    }
-  };
-
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-6">
-      {/* Sidebar List */}
-      <div className="w-1/4 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700 flex items-center">
-          <Settings size={18} className="mr-2" />
-          Endpoints
-        </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
-          {API_ENDPOINTS.map(ep => (
-            <button
-              key={ep.id}
-              onClick={() => setSelectedEndpoint(ep)}
-              className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center group transition-colors ${
-                selectedEndpoint.id === ep.id ? 'bg-slate-100' : 'hover:bg-slate-50'
-              }`}
-            >
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded mr-2 w-12 text-center ${getMethodColor(ep.method)}`}>
-                {ep.method}
-              </span>
-              <span className={`font-medium truncate ${selectedEndpoint.id === ep.id ? 'text-slate-900' : 'text-slate-600'}`}>
-                {ep.title}
-              </span>
-              {selectedEndpoint.id === ep.id && (
-                <Check size={14} className="ml-auto text-emerald-500" />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Main Documentation Area */}
-      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2">
-        {/* Header & Details */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <div className="flex items-center space-x-3 mb-4">
-            <span className={`text-sm font-bold px-3 py-1 rounded-md ${getMethodColor(selectedEndpoint.method)}`}>
-              {selectedEndpoint.method}
-            </span>
-            <h2 className="text-xl font-bold text-slate-800 font-mono">{selectedEndpoint.path}</h2>
-          </div>
-          <p className="text-slate-600 mb-6 leading-relaxed">
-            {selectedEndpoint.description}
-          </p>
-
-          {/* Parameters */}
-          {selectedEndpoint.params.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Parâmetros (Body)</h3>
-              <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-100 border-b border-slate-200 text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Nome</th>
-                      <th className="px-4 py-3 font-medium">Tipo</th>
-                      <th className="px-4 py-3 font-medium">Descrição</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {selectedEndpoint.params.map((param: any, idx: number) => (
-                      <tr key={idx}>
-                        <td className="px-4 py-3 font-mono text-emerald-600">
-                          {param.name} {param.required && <span className="text-rose-500">*</span>}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">{param.type}</td>
-                        <td className="px-4 py-3 text-slate-700">{param.desc}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Playground */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Request */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-slate-800 flex items-center">
-                <Loader2 size={18} className="mr-2 text-slate-400" />
-                Requisição
-              </h3>
-              <button 
-                onClick={handleSimulateRequest}
-                disabled={loading}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center transition-colors disabled:opacity-50"
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-80 border-r border-slate-100 p-6">
+          <h3 className="font-bold text-slate-800 mb-6">API Endpoints</h3>
+          <div className="space-y-2">
+            {API_ENDPOINTS.map((endpoint) => (
+              <button
+                key={endpoint.id}
+                onClick={() => setSelectedEndpoint(endpoint)}
+                className={`w-full text-left p-4 rounded-lg border transition-all ${
+                  selectedEndpoint.id === endpoint.id
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin mr-1" size={12} />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send size={12} className="mr-1" />
-                    Executar
-                  </>
-                )}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">
+                    {endpoint.method}
+                  </span>
+                  <span className="text-xs text-slate-500">{endpoint.path}</span>
+                </div>
+                <h4 className="font-semibold text-slate-800 mb-1">{endpoint.title}</h4>
+                <p className="text-sm text-slate-600">{endpoint.description}</p>
               </button>
-            </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6">
+          <div className="mb-6">
+            <h3 className="font-bold text-slate-800 mb-2">{selectedEndpoint.title}</h3>
+            <p className="text-slate-600 mb-4">{selectedEndpoint.description}</p>
             
-            {selectedEndpoint.method === 'POST' ? (
-              <div className="relative flex-1">
+            {/* Parameters */}
+            {selectedEndpoint.params.length > 0 && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-slate-700 mb-3">Parâmetros:</h4>
+                <div className="space-y-2">
+                  {selectedEndpoint.params.map((param) => (
+                    <div key={param.name} className="flex items-center space-x-2 text-sm">
+                      <span className={`font-mono px-2 py-1 rounded ${
+                        param.required ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {param.name}
+                      </span>
+                      <span className="text-slate-600">{param.desc}</span>
+                      <span className="text-xs text-slate-500">({param.type})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Request Body */}
+            {selectedEndpoint.bodyEx && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-slate-700 mb-3">Corpo da Requisição:</h4>
                 <textarea
                   value={requestBody}
                   onChange={(e) => setRequestBody(e.target.value)}
-                  className="w-full h-64 font-mono text-xs bg-slate-900 text-emerald-400 p-4 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                  spellCheck={false}
-                  placeholder={selectedEndpoint.bodyEx ? JSON.stringify(selectedEndpoint.bodyEx, null, 2) : '{}'}
+                  className="w-full h-32 p-3 border border-slate-200 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  placeholder="Insira o corpo da requisição em formato JSON"
                 />
-                <span className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono">JSON</span>
-              </div>
-            ) : (
-              <div className="flex-1 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 text-sm border border-dashed border-slate-200">
-                Nenhum corpo necessário para requisições GET
               </div>
             )}
+
+            {/* Send Button */}
+            <button
+              onClick={handleSimulateRequest}
+              disabled={loading || (selectedEndpoint.bodyEx && !requestBody.trim())}
+              className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              {loading ? 'Enviando...' : 'Enviar Requisição'}
+            </button>
           </div>
 
           {/* Response */}
-          <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800 flex flex-col text-slate-300">
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-800">
-              <h3 className="font-bold text-white flex items-center">
-                <Settings size={18} className="mr-2 text-emerald-500" />
-                Resposta
-              </h3>
-              {response && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
-                    200 OK
-                  </span>
-                  <button
-                    onClick={handleCopyResponse}
-                    className="text-slate-400 hover:text-white transition-colors"
-                    title="Copiar resposta"
-                  >
-                    {copied ? <Check size={14} /> : <Send size={14} />}
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 overflow-auto font-mono text-xs relative">
-              {response ? (
-                <pre className="text-emerald-300 leading-relaxed">
-                  {JSON.stringify(response, null, 2)}
+          {response && (
+            <div className="border-t border-slate-200 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold text-slate-700">Resposta:</h4>
+                <button
+                  onClick={handleCopyResponse}
+                  className="text-slate-500 hover:text-slate-700 flex items-center space-x-2 text-sm"
+                >
+                  {copied ? <Check size={14} /> : <Settings size={14} />}
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
+              <div className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto">
+                <pre className="text-sm">
+                  <code>{JSON.stringify(response, null, 2)}</code>
                 </pre>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-600 italic">
-                  Aguardando execução...
-                </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

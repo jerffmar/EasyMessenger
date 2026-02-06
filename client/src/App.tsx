@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSocket } from './hooks/useSocket';
-import { apiService } from './services/api';
-import { ConnectionStatus, Chat, Message } from './types';
+import { useConnectionState, useChats, useDashboardMetrics } from './hooks/useRealData';
+import { ConnectionStatus, Chat } from './types';
 import { 
   MessageSquare, 
   Smartphone, 
@@ -63,25 +62,11 @@ const MetricCard = ({ title, value, icon: Icon, trend, trendUp }: any) => (
 );
 
 function App() {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ connected: false, user: null });
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [chats, setChats] = useState<Chat[]>([]);
+  const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
+  const { chats, loading: chatsLoading } = useChats();
+  const { metrics } = useDashboardMetrics();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [loading, setLoading] = useState(true);
   const [qrProgress, setQrProgress] = useState(100);
-
-  // Real dashboard metrics
-  const [dashboardMetrics, setDashboardMetrics] = useState({
-    messagesToday: 0,
-    activeSessions: connectionStatus.connected ? 1 : 0,
-    errorRate: 0,
-    averageTime: 0,
-    messageVolume: [0, 0, 0, 0, 0, 0, 0],
-    trends: {
-      messages: { value: '+0%', up: true },
-      errors: { value: '-0%', up: true }
-    }
-  });
 
   // Real system status
   const systemStatus = {
@@ -91,60 +76,6 @@ function App() {
       color: connectionStatus.connected ? 'text-emerald-400' : 'text-amber-400' 
     }
   };
-
-  const { onQRCode, onConnectionUpdate, onMessageUpsert, onChatsUpdate } = useSocket();
-
-  useEffect(() => {
-    // Initial data load
-    const loadInitialData = async () => {
-      try {
-        const status = await apiService.getSessionStatus();
-        setConnectionStatus(status);
-        
-        if (status.connected) {
-          const chatsData = await apiService.getChats();
-          setChats(chatsData);
-        }
-      } catch (error) {
-        console.error('Failed to load initial data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialData();
-  }, []);
-
-  useEffect(() => {
-    // Socket event listeners
-    const unsubscribeQR = onQRCode((qr: string) => {
-      setQrCode(qr);
-    });
-
-    const unsubscribeConnection = onConnectionUpdate((update: any) => {
-      setConnectionStatus({
-        connected: update.connection === 'open',
-        user: update.user || null
-      });
-    });
-
-    const unsubscribeMessage = onMessageUpsert((message: any) => {
-      // Handle new messages
-      console.log('New message:', message);
-    });
-
-    const unsubscribeChats = onChatsUpdate((chatsUpdate: any) => {
-      // Handle chats update
-      console.log('Chats updated:', chatsUpdate);
-    });
-
-    return () => {
-      unsubscribeQR();
-      unsubscribeConnection();
-      unsubscribeMessage();
-      unsubscribeChats();
-    };
-  }, [onQRCode, onConnectionUpdate, onMessageUpsert, onChatsUpdate]);
 
   // Mock QR Progress
   useEffect(() => {
@@ -156,27 +87,7 @@ function App() {
     }
   }, [activeTab, connectionStatus.connected]);
 
-  const handleDisconnect = async () => {
-    try {
-      await apiService.logout();
-      setConnectionStatus({ connected: false, user: null });
-      setQrCode(null);
-      setChats([]);
-    } catch (error) {
-      console.error('Failed to disconnect:', error);
-    }
-  };
-
-  const handleConnect = async () => {
-    try {
-      await apiService.connect();
-      // QR code will be received via socket events
-    } catch (error) {
-      console.error('Failed to connect:', error);
-    }
-  };
-
-  if (loading) {
+  if (loading || chatsLoading) {
     return (
       <div className="flex min-h-screen bg-[#F8FAFC] items-center justify-center">
         <div className="flex items-center space-x-3">
@@ -291,17 +202,17 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard title="Mensagens Hoje" value={dashboardMetrics.messagesToday.toLocaleString()} icon={Send} trend={dashboardMetrics.trends.messages.value} trendUp={dashboardMetrics.trends.messages.up} />
-              <MetricCard title="Sessões Ativas" value={dashboardMetrics.activeSessions} icon={Smartphone} />
-              <MetricCard title="Erros de Envio" value={`${dashboardMetrics.errorRate}%`} icon={X} trend={dashboardMetrics.trends.errors.value} trendUp={dashboardMetrics.trends.errors.up} />
-              <MetricCard title="Tempo Médio" value={`${dashboardMetrics.averageTime}s`} icon={Loader2} />
+              <MetricCard title="Mensagens Hoje" value={metrics.messagesToday.toLocaleString()} icon={Send} trend={metrics.trends.messages.value} trendUp={metrics.trends.messages.up} />
+              <MetricCard title="Sessões Ativas" value={metrics.activeSessions} icon={Smartphone} />
+              <MetricCard title="Erros de Envio" value={`${metrics.errorRate}%`} icon={X} trend={metrics.trends.errors.value} trendUp={metrics.trends.errors.up} />
+              <MetricCard title="Tempo Médio" value={`${metrics.averageTime}s`} icon={Loader2} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-96 flex flex-col">
                 <h3 className="font-bold text-slate-800 mb-6">Volume de Mensagens (Últimos 7 dias)</h3>
                 <div className="flex-1 flex items-end justify-between space-x-4 px-2">
-                  {dashboardMetrics.messageVolume.map((h, i) => (
+                  {metrics.messageVolume.map((h, i) => (
                     <div key={i} className="flex-1 bg-emerald-50 rounded-t-lg relative group">
                       <div 
                         className="absolute bottom-0 w-full bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600"
@@ -389,7 +300,7 @@ function App() {
                     </div>
                     {/* Hover Hint */}
                     <div className="absolute inset-0 bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
-                      <span className="font-bold text-slate-900">Clique para Simular Conexão</span>
+                      <span className="font-bold text-slate-900">Clique para Conectar</span>
                     </div>
                   </div>
                 )}
