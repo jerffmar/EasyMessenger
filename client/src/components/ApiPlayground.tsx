@@ -1,261 +1,226 @@
-import React, { useState } from 'react';
-import { apiService } from '../services/api';
-import { Send, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Check, Settings, X, Loader2 } from 'lucide-react';
 
-interface ApiTest {
-  name: string;
-  method: 'GET' | 'POST';
-  endpoint: string;
-  body?: any;
-  description: string;
-}
+// Import mock data
+import { API_ENDPOINTS, mockApiService } from '../mockData';
 
 const ApiPlayground: React.FC = () => {
-  const [selectedTest, setSelectedTest] = useState<ApiTest | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] = useState(API_ENDPOINTS[0]);
+  const [requestBody, setRequestBody] = useState('');
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const apiTests: ApiTest[] = [
-    {
-      name: 'Health Check',
-      method: 'GET',
-      endpoint: '/health',
-      description: 'Verifica o status do servidor'
-    },
-    {
-      name: 'Status da Sessão',
-      method: 'GET',
-      endpoint: '/api/session/status',
-      description: 'Verifica o status da conexão com WhatsApp'
-    },
-    {
-      name: 'Listar Chats',
-      method: 'GET',
-      endpoint: '/api/chats',
-      description: 'Lista todas as conversas'
-    },
-    {
-      name: 'Enviar Mensagem',
-      method: 'POST',
-      endpoint: '/api/messages/text',
-      body: {
-        number: '5511999998888',
-        text: 'Mensagem de teste da API'
-      },
-      description: 'Envia uma mensagem de texto'
-    }
-  ];
+  useEffect(() => {
+    // Reset inputs when endpoint changes
+    setRequestBody(selectedEndpoint.bodyEx ? JSON.stringify(selectedEndpoint.bodyEx, null, 2) : '');
+    setResponse(null);
+  }, [selectedEndpoint]);
 
-  const executeTest = async () => {
-    if (!selectedTest) return;
-
+  const handleSimulateRequest = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      let result;
-
-      switch (selectedTest.method) {
-        case 'GET':
-          result = await fetch(selectedTest.endpoint);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Mock response based on endpoint
+      let mockResponse;
+      switch (selectedEndpoint.id) {
+        case 'health':
+          mockResponse = await mockApiService.getHealth();
           break;
-        case 'POST':
-          result = await fetch(selectedTest.endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(selectedTest.body),
-          });
+        case 'qr':
+          mockResponse = await mockApiService.getQRCode();
           break;
+        case 'status':
+          mockResponse = await mockApiService.getSessionStatus();
+          break;
+        case 'send-text':
+          const body = JSON.parse(requestBody);
+          mockResponse = await mockApiService.sendMessage(body.number, body.text);
+          break;
+        case 'logout':
+          mockResponse = await mockApiService.logout();
+          break;
+        default:
+          mockResponse = selectedEndpoint.responseEx;
       }
-
-      const data = await result.json();
-      setResponse({
-        status: result.status,
-        statusText: result.statusText,
-        data
-      });
+      
+      setResponse(mockResponse);
     } catch (error) {
-      setResponse({
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
+      setResponse({ error: 'Failed to execute request' });
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = () => {
-    const text = JSON.stringify(response, null, 2);
-    navigator.clipboard.writeText(text);
+  const handleCopyResponse = () => {
+    navigator.clipboard.writeText(JSON.stringify(response, null, 2));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const getMethodColor = (method: string) => {
-    switch (method) {
-      case 'GET': return 'bg-green-100 text-green-800';
-      case 'POST': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+    switch(method) {
+      case 'GET': return 'bg-blue-100 text-blue-700';
+      case 'POST': return 'bg-emerald-100 text-emerald-700';
+      default: return 'bg-slate-100 text-slate-700';
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">API Playground</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Teste os endpoints da API diretamente do navegador
-          </p>
+    <div className="flex h-[calc(100vh-8rem)] gap-6">
+      {/* Sidebar List */}
+      <div className="w-1/4 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-slate-100 bg-slate-50 font-bold text-slate-700 flex items-center">
+          <Settings size={18} className="mr-2" />
+          Endpoints
         </div>
-
-        <div className="p-6">
-          {/* Test Selection */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Selecione um teste
-            </label>
-            <select
-              value={selectedTest?.name || ''}
-              onChange={(e) => {
-                const test = apiTests.find(t => t.name === e.target.value);
-                setSelectedTest(test || null);
-                setResponse(null);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Escolha um endpoint...</option>
-              {apiTests.map((test) => (
-                <option key={test.name} value={test.name}>
-                  {test.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Test Details */}
-          {selectedTest && (
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium text-gray-900">{selectedTest.name}</h4>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getMethodColor(selectedTest.method)}`}>
-                  {selectedTest.method}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-2">{selectedTest.description}</p>
-              <code className="text-sm bg-gray-200 px-2 py-1 rounded">
-                {selectedTest.endpoint}
-              </code>
-              
-              {selectedTest.body && (
-                <div className="mt-3">
-                  <p className="text-sm font-medium text-gray-700 mb-1">Body:</p>
-                  <pre className="text-xs bg-gray-200 p-2 rounded overflow-x-auto">
-                    {JSON.stringify(selectedTest.body, null, 2)}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Execute Button */}
-          <div className="mb-6">
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {API_ENDPOINTS.map(ep => (
             <button
-              onClick={executeTest}
-              disabled={!selectedTest || loading}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              key={ep.id}
+              onClick={() => setSelectedEndpoint(ep)}
+              className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center group transition-colors ${
+                selectedEndpoint.id === ep.id ? 'bg-slate-100' : 'hover:bg-slate-50'
+              }`}
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Executando...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  <span>Executar</span>
-                </>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded mr-2 w-12 text-center ${getMethodColor(ep.method)}`}>
+                {ep.method}
+              </span>
+              <span className={`font-medium truncate ${selectedEndpoint.id === ep.id ? 'text-slate-900' : 'text-slate-600'}`}>
+                {ep.title}
+              </span>
+              {selectedEndpoint.id === ep.id && (
+                <Check size={14} className="ml-auto text-emerald-500" />
               )}
             </button>
-          </div>
-
-          {/* Response */}
-          {response && (
-            <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-gray-900">Resposta</h4>
-                <button
-                  onClick={copyToClipboard}
-                  className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  {copied ? (
-                    <>
-                      <span>Copiado!</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Copiar</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4">
-                {response.error ? (
-                  <div className="text-red-600">
-                    <p className="font-medium">Error:</p>
-                    <p className="text-sm">{response.error}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center space-x-4 mb-2">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        response.status >= 200 && response.status < 300
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {response.status} {response.statusText}
-                      </span>
-                    </div>
-                    <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
-                      {JSON.stringify(response.data, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* API Documentation */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Documentação da API</h3>
+      {/* Main Documentation Area */}
+      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-2">
+        {/* Header & Details */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="flex items-center space-x-3 mb-4">
+            <span className={`text-sm font-bold px-3 py-1 rounded-md ${getMethodColor(selectedEndpoint.method)}`}>
+              {selectedEndpoint.method}
+            </span>
+            <h2 className="text-xl font-bold text-slate-800 font-mono">{selectedEndpoint.path}</h2>
+          </div>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            {selectedEndpoint.description}
+          </p>
+
+          {/* Parameters */}
+          {selectedEndpoint.params.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3">Parâmetros (Body)</h3>
+              <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-100 border-b border-slate-200 text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Nome</th>
+                      <th className="px-4 py-3 font-medium">Tipo</th>
+                      <th className="px-4 py-3 font-medium">Descrição</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedEndpoint.params.map((param: any, idx: number) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-3 font-mono text-emerald-600">
+                          {param.name} {param.required && <span className="text-rose-500">*</span>}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500">{param.type}</td>
+                        <td className="px-4 py-3 text-slate-700">{param.desc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Endpoints Disponíveis</h4>
-              <ul className="space-y-2 text-sm">
-                <li><code className="bg-gray-100 px-1 rounded">GET /health</code> - Status do servidor</li>
-                <li><code className="bg-gray-100 px-1 rounded">GET /api/session/status</code> - Status da sessão WhatsApp</li>
-                <li><code className="bg-gray-100 px-1 rounded">POST /api/session/logout</code> - Desconectar sessão</li>
-                <li><code className="bg-gray-100 px-1 rounded">POST /api/session/webhook</code> - Configurar webhook</li>
-                <li><code className="bg-gray-100 px-1 rounded">POST /api/messages/text</code> - Enviar mensagem</li>
-                <li><code className="bg-gray-100 px-1 rounded">GET /api/chats</code> - Listar chats</li>
-                <li><code className="bg-gray-100 px-1 rounded">GET /api/chats/:id/messages</code> - Mensagens do chat</li>
-              </ul>
+
+        {/* Playground */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Request */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-slate-800 flex items-center">
+                <Loader2 size={18} className="mr-2 text-slate-400" />
+                Requisição
+              </h3>
+              <button 
+                onClick={handleSimulateRequest}
+                disabled={loading}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center transition-colors disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin mr-1" size={12} />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send size={12} className="mr-1" />
+                    Executar
+                  </>
+                )}
+              </button>
             </div>
             
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Eventos Socket.io</h4>
-              <ul className="space-y-2 text-sm">
-                <li><code className="bg-gray-100 px-1 rounded">qr_code</code> - Novo QR Code gerado</li>
-                <li><code className="bg-gray-100 px-1 rounded">connection_update</code> - Atualização de conexão</li>
-                <li><code className="bg-gray-100 px-1 rounded">message_upsert</code> - Nova mensagem recebida</li>
-                <li><code className="bg-gray-100 px-1 rounded">chats_update</code> - Atualização dos chats</li>
-              </ul>
+            {selectedEndpoint.method === 'POST' ? (
+              <div className="relative flex-1">
+                <textarea
+                  value={requestBody}
+                  onChange={(e) => setRequestBody(e.target.value)}
+                  className="w-full h-64 font-mono text-xs bg-slate-900 text-emerald-400 p-4 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                  spellCheck={false}
+                  placeholder={selectedEndpoint.bodyEx ? JSON.stringify(selectedEndpoint.bodyEx, null, 2) : '{}'}
+                />
+                <span className="absolute top-2 right-2 text-[10px] text-slate-500 font-mono">JSON</span>
+              </div>
+            ) : (
+              <div className="flex-1 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 text-sm border border-dashed border-slate-200">
+                Nenhum corpo necessário para requisições GET
+              </div>
+            )}
+          </div>
+
+          {/* Response */}
+          <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800 flex flex-col text-slate-300">
+            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-800">
+              <h3 className="font-bold text-white flex items-center">
+                <Settings size={18} className="mr-2 text-emerald-500" />
+                Resposta
+              </h3>
+              {response && (
+                <div className="flex items-center space-x-2">
+                  <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
+                    200 OK
+                  </span>
+                  <button
+                    onClick={handleCopyResponse}
+                    className="text-slate-400 hover:text-white transition-colors"
+                    title="Copiar resposta"
+                  >
+                    {copied ? <Check size={14} /> : <Send size={14} />}
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-auto font-mono text-xs relative">
+              {response ? (
+                <pre className="text-emerald-300 leading-relaxed">
+                  {JSON.stringify(response, null, 2)}
+                </pre>
+              ) : (
+                <div className="h-full flex items-center justify-center text-slate-600 italic">
+                  Aguardando execução...
+                </div>
+              )}
             </div>
           </div>
         </div>

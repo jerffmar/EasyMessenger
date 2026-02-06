@@ -4,45 +4,13 @@ import { apiService } from '../services/api';
 import { useSocket } from '../hooks/useSocket';
 import { Send, MessageSquare, Users, Check, Settings, X, Loader2 } from 'lucide-react';
 
+// Import mock data
+import { MOCK_CHATS, formatTimestamp, generateAvatar } from '../mockData';
+
 interface LiveChatProps {
   chats: Chat[];
   isConnected: boolean;
 }
-
-// Mock data for demonstration
-const MOCK_CHATS: any[] = [
-  {
-    id: '1',
-    name: 'Suporte Técnico',
-    lastMessage: 'Obrigado pelo contato!',
-    unread: 2,
-    timestamp: '10:42',
-    messages: [
-      { id: '1', text: 'Olá, preciso de ajuda com a API.', fromMe: false, timestamp: new Date(), status: 'read' },
-      { id: '2', text: 'Claro! Qual é a sua dúvida?', fromMe: true, timestamp: new Date(), status: 'read' },
-      { id: '3', text: 'Obrigado pelo contato!', fromMe: true, timestamp: new Date(), status: 'read' },
-    ]
-  },
-  {
-    id: '2',
-    name: 'João Silva',
-    lastMessage: 'Pagamento confirmado.',
-    unread: 0,
-    timestamp: 'Ontem',
-    messages: [
-        { id: '1', text: 'Bom dia, o boleto foi pago.', fromMe: false, timestamp: new Date(), status: 'read' },
-        { id: '2', text: 'Pagamento confirmado. Obrigado!', fromMe: true, timestamp: new Date(), status: 'read' }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Grupo Vendas',
-    lastMessage: 'Meta batida pessoal! 🚀',
-    unread: 5,
-    timestamp: 'Ontem',
-    messages: []
-  },
-];
 
 const LiveChat: React.FC<LiveChatProps> = ({ chats, isConnected }) => {
   const [selectedChatId, setSelectedChatId] = useState<string>(MOCK_CHATS[0].id);

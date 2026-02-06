@@ -14,6 +14,17 @@ import {
   Users
 } from 'lucide-react';
 
+// Import mock data and services
+import { 
+  API_ENDPOINTS, 
+  DASHBOARD_METRICS, 
+  SYSTEM_STATUS, 
+  mockApiService, 
+  mockSocketService,
+  formatTimestamp,
+  generateAvatar
+} from './mockData';
+
 // Components
 import QRCodeDisplay from './components/QRCodeDisplay';
 import Dashboard from './components/Dashboard';
@@ -22,79 +33,6 @@ import ApiPlayground from './components/ApiPlayground';
 import SettingsPanel from './components/SettingsPanel';
 
 type TabType = 'dashboard' | 'devices' | 'chat' | 'api' | 'logs' | 'settings';
-
-// --- API Documentation Data ---
-const API_ENDPOINTS = [
-  {
-    id: 'health',
-    method: 'GET',
-    path: '/health',
-    title: 'Health Check',
-    description: 'Verifica se a API está online e retorna o tempo de atividade.',
-    params: [],
-    responseEx: {
-      status: "ok",
-      uptime: 1245.5
-    }
-  },
-  {
-    id: 'qr',
-    method: 'GET',
-    path: '/api/qr',
-    title: 'Obter QR Code',
-    description: 'Retorna a string do QR Code para autenticação. Use uma lib de QR para renderizar.',
-    params: [],
-    responseEx: {
-      qr: "2@jKO...==",
-      connected: false
-    }
-  },
-  {
-    id: 'status',
-    method: 'GET',
-    path: '/api/status',
-    title: 'Status da Sessão',
-    description: 'Retorna o estado atual da conexão do WhatsApp e dados do usuário.',
-    params: [],
-    responseEx: {
-      connected: true,
-      user: { id: "5511999999999:1@s.whatsapp.net", name: "Admin" },
-      device: "Ativo"
-    }
-  },
-  {
-    id: 'send-text',
-    method: 'POST',
-    path: '/api/messages/text',
-    title: 'Enviar Texto',
-    description: 'Envia uma mensagem de texto simples para um número especificado.',
-    params: [
-      { name: 'number', type: 'string', required: true, desc: 'Número com DDI e DDD (ex: 5511999999999)' },
-      { name: 'text', type: 'string', required: true, desc: 'Conteúdo da mensagem' }
-    ],
-    bodyEx: {
-      number: "5511999999999",
-      text: "Olá! Mensagem enviada via API."
-    },
-    responseEx: {
-      status: "success",
-      message_id: "3EB0...",
-      timestamp: 1678900000
-    }
-  },
-  {
-    id: 'logout',
-    method: 'POST',
-    path: '/api/logout',
-    title: 'Logout',
-    description: 'Encerra a sessão atual, apaga os dados de autenticação e reinicia o socket.',
-    params: [],
-    responseEx: {
-      status: "success",
-      message: "Sessão encerrada"
-    }
-  }
-];
 
 // --- Components ---
 const SidebarItem = ({ icon: Icon, label, active, onClick, badge }: any) => (
@@ -339,17 +277,17 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard title="Mensagens Hoje" value="1,245" icon={Send} trend="+12%" trendUp={true} />
-              <MetricCard title="Sessões Ativas" value="1" icon={Smartphone} />
-              <MetricCard title="Erros de Envio" value="0.4%" icon={X} trend="-2%" trendUp={true} />
-              <MetricCard title="Tempo Médio" value="1.2s" icon={Loader2} />
+              <MetricCard title="Mensagens Hoje" value={DASHBOARD_METRICS.messagesToday.toLocaleString()} icon={Send} trend={DASHBOARD_METRICS.trends.messages.value} trendUp={DASHBOARD_METRICS.trends.messages.up} />
+              <MetricCard title="Sessões Ativas" value={DASHBOARD_METRICS.activeSessions} icon={Smartphone} />
+              <MetricCard title="Erros de Envio" value={`${DASHBOARD_METRICS.errorRate}%`} icon={X} trend={DASHBOARD_METRICS.trends.errors.value} trendUp={DASHBOARD_METRICS.trends.errors.up} />
+              <MetricCard title="Tempo Médio" value={`${DASHBOARD_METRICS.averageTime}s`} icon={Loader2} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-96 flex flex-col">
                 <h3 className="font-bold text-slate-800 mb-6">Volume de Mensagens (Últimos 7 dias)</h3>
                 <div className="flex-1 flex items-end justify-between space-x-4 px-2">
-                  {[45, 78, 55, 90, 82, 65, 95].map((h, i) => (
+                  {DASHBOARD_METRICS.messageVolume.map((h, i) => (
                     <div key={i} className="flex-1 bg-emerald-50 rounded-t-lg relative group">
                       <div 
                         className="absolute bottom-0 w-full bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600"
@@ -375,21 +313,27 @@ function App() {
                       <div className="p-2 bg-white/5 rounded-lg"><Settings size={18} className="text-emerald-400" /></div>
                       <span className="text-sm font-medium text-slate-300">API Server</span>
                     </div>
-                    <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">ONLINE</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.apiServer.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.apiServer.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                      {SYSTEM_STATUS.apiServer.status}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center border-b border-white/10 pb-4">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-white/5 rounded-lg"><Users size={18} className="text-blue-400" /></div>
                       <span className="text-sm font-medium text-slate-300">PostgreSQL</span>
                     </div>
-                    <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">ONLINE</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.postgresql.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.postgresql.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                      {SYSTEM_STATUS.postgresql.status}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center pb-4">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-white/5 rounded-lg"><Loader2 size={18} className="text-amber-400" /></div>
                       <span className="text-sm font-medium text-slate-300">Baileys Socket</span>
                     </div>
-                    <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded">SYNCED</span>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${SYSTEM_STATUS.baileysSocket.color === 'text-emerald-400' ? 'text-emerald-400 bg-emerald-400/10' : SYSTEM_STATUS.baileysSocket.color === 'text-blue-400' ? 'text-blue-400 bg-blue-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                      {SYSTEM_STATUS.baileysSocket.status}
+                    </span>
                   </div>
                 </div>
               </div>
