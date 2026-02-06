@@ -151,9 +151,9 @@ const Dashboard: React.FC<DashboardProps> = ({ connectionStatus, chats }) => {
                   </div>
                   <p className="text-sm text-slate-500 truncate">{chat.lastMessage || 'Sem mensagens'}</p>
                 </div>
-                {chat.unread > 0 && (
+                {chat.unreadCount > 0 && (
                   <div className="bg-emerald-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-                    {chat.unread}
+                    {chat.unreadCount}
                   </div>
                 )}
               </div>
