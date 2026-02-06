@@ -1,4 +1,4 @@
-import { EventEmitter } from 'events';
+import EventEmitter from 'events';
 import { makeWASocket, useMultiFileAuthState, DisconnectReason, isJidBroadcast, isJidGroup, WAMessage, WASocket } from '@whiskeysockets/baileys';
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
