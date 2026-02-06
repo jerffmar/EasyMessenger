@@ -1,6 +1,6 @@
 import React from 'react';
 import QRCode from 'qrcode';
-import { X, Smartphone, Loader2, AlertCircle } from 'lucide-react';
+import { X, Smartphone, Loader2 } from 'lucide-react';
 
 interface QRCodeDisplayProps {
   qrCode: string;
@@ -54,7 +54,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
           </div>
           {!isLoading && (
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-              <AlertCircle size={12} />
+              <span>●</span>
               <span>Aguardando conexão</span>
             </div>
           )}
@@ -68,7 +68,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({ qrCode, onRefresh, isLoad
       {error ? (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 max-w-xs">
           <div className="flex items-center space-x-2 text-red-600">
-            <AlertCircle size={16} />
+            <span>⚠</span>
             <p className="text-sm font-medium">{error}</p>
           </div>
         </div>
