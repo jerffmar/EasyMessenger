@@ -47,16 +47,32 @@ class BaileysService extends EventEmitter {
   constructor() {
     super();
     this.sessionPath = process.env.SESSION_PATH || './auth_info';
+    
+    // Safety check: prevent creating directories at root level
+    if (this.sessionPath === '/auth' || (this.sessionPath.startsWith('/auth') && this.sessionPath.split('/').length <= 3)) {
+      this.logger.warn('Dangerous session path detected, using relative path instead');
+      this.sessionPath = './auth_info';
+    }
+    
     this.logger = pino({
       level: process.env.LOG_LEVEL || 'info'
     });
     
+    this.logger.info(`Session path: ${this.sessionPath}`);
     this.ensureAuthDirectory();
   }
 
   private ensureAuthDirectory() {
-    if (!existsSync(this.sessionPath)) {
-      mkdirSync(this.sessionPath, { recursive: true });
+    try {
+      if (!existsSync(this.sessionPath)) {
+        this.logger.info(`Creating auth directory: ${this.sessionPath}`);
+        mkdirSync(this.sessionPath, { recursive: true });
+      } else {
+        this.logger.info(`Auth directory already exists: ${this.sessionPath}`);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to create auth directory ${this.sessionPath}:`, error);
+      throw error;
     }
   }
 
