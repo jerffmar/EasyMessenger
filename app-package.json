@@ -11,7 +11,7 @@
     "build:client": "cd client && npm run build",
     "build:server": "tsc -p server/tsconfig.json",
     "start": "node lib/server.js",
-    "postbuild": "cp -r client/dist lib/public",
+    "postbuild": "cp -r client/dist lib/public && echo 'export { io } from \"./server.js\";' > lib/index.js",
     "install:all": "npm install && cd client && npm install"
   },
   "dependencies": {
