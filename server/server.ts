@@ -10,6 +10,8 @@ import { baileysService } from './services/baileys.js';
 import { sessionRoutes } from './routes/session.js';
 import { messagesRoutes } from './routes/messages.js';
 import { chatsRoutes } from './routes/chats.js';
+import authRoutes from './routes/auth.js';
+import { requireAuth } from './services/auth.js';
 
 dotenv.config();
 
@@ -36,9 +38,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(join(__dirname, 'public')));
 
 // API Routes
-app.use('/api/session', sessionRoutes);
-app.use('/api/messages', messagesRoutes);
-app.use('/api/chats', chatsRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/session', requireAuth, sessionRoutes);
+app.use('/api/messages', requireAuth, messagesRoutes);
+app.use('/api/chats', requireAuth, chatsRoutes);
 
 // Health check
 app.get('/health', (req: express.Request, res: express.Response) => {

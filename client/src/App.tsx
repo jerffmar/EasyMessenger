@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useConnectionState, useChats, useDashboardMetrics } from './hooks/useRealData';
+import { useAuth } from './hooks/useAuth';
 import { ConnectionStatus, Chat } from './types';
 import { 
   MessageSquare, 
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 // Components
+import Login from './components/Login';
 import QRCodeDisplay from './components/QRCodeDisplay';
 import Dashboard from './components/Dashboard';
 import LiveChat from './components/LiveChat';
@@ -62,11 +64,28 @@ const MetricCard = ({ title, value, icon: Icon, trend, trendUp }: any) => (
 );
 
 function App() {
+  const { isAuthenticated, isLoading, error, login, logout } = useAuth();
   const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
   const { chats, loading: chatsLoading } = useChats();
   const { metrics } = useDashboardMetrics();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [qrProgress, setQrProgress] = useState(100);
+
+  // Show login screen if not authenticated
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin text-emerald-400 mx-auto mb-4" size={48} />
+          <p className="text-white text-lg">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={login} error={error} isLoading={isLoading} />;
+  }
 
   // Real system status
   const systemStatus = {
@@ -158,11 +177,14 @@ function App() {
 
         <div className="p-4 border-t border-slate-100">
           <button 
-            onClick={handleDisconnect}
+            onClick={() => {
+              logout();
+              handleDisconnect();
+            }}
             className="flex items-center space-x-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-4 py-3 rounded-xl w-full transition-all text-sm font-medium"
           >
             <LogOut size={18} />
-            <span>Encerrar Sessão</span>
+            <span>Sair do Sistema</span>
           </button>
         </div>
       </aside>

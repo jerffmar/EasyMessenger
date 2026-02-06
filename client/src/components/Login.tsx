@@ -66,12 +66,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
             >
               {isLoading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <Loader2 className="animate-spin" size={20} />
                   <span>Verificando...</span>
                 </>
               ) : (
                 <>
-                  <LogIn size={20} />
+                  <Shield size={20} />
                   <span>Acessar</span>
                 </>
               )}
