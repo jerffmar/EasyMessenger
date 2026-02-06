@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { ApiResponse, ConnectionStatus, Chat, Message } from '../types';
 
 // Auto-detect API URL based on environment
@@ -20,10 +20,33 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-const api = axios.create({
+const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
 });
+
+// Add auth token to all requests
+(api as any).interceptors.request.use((config: any) => {
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Handle 401 responses
+(api as any).interceptors.response.use(
+  (response: any) => response,
+  (error: any) => {
+    if (error.response?.status === 401) {
+      // Clear invalid token
+      localStorage.removeItem('authToken');
+      // Redirect to login by reloading the page
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const apiService = {
   // Health check
