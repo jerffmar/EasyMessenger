@@ -41,8 +41,15 @@ const api: AxiosInstance = axios.create({
     if (error.response?.status === 401) {
       // Clear invalid token
       localStorage.removeItem('authToken');
-      // Only reload if not already on login page to prevent refresh loops
-      if (!window.location.pathname.includes('/login') && !window.location.hash.includes('login')) {
+      // Only reload if we have a token (meaning we thought we were authenticated)
+      // and we're not already on a page that handles authentication
+      const hadToken = !!error.config?.headers?.Authorization;
+      const isAuthPage = window.location.pathname.includes('/login') || 
+                        window.location.hash.includes('login') ||
+                        window.location.pathname === '/';
+      
+      if (hadToken && !isAuthPage) {
+        console.log('Authentication expired, reloading page');
         window.location.reload();
       }
     }
