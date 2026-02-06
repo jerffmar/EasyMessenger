@@ -9,7 +9,6 @@ interface LoginProps {
 
 const Login: React.FC<LoginProps> = ({ onLogin, error, isLoading = false }) => {
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
