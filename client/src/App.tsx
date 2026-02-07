@@ -142,6 +142,15 @@ function AuthenticatedApp({
       console.log('Device connected, resetting QR progress');
       setLocalQrProgress(100);
     }
+    
+    // Always return a cleanup function
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+        console.log('QR progress timer stopped');
+      }
+    };
+  }, [activeTab, connectionStatus.connected]);
 
   if (loading || chatsLoading) {
     return (
@@ -419,7 +428,6 @@ function AuthenticatedApp({
       `}</style>
     </div>
   );
-}
 }
 
 export default App;
