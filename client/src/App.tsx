@@ -67,11 +67,6 @@ function App() {
   const { isAuthenticated, isLoading, error, login, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [qrProgress, setQrProgress] = useState(100);
-  
-  // Always call hooks, but they will handle their own internal logic
-  const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
-  const { chats, loading: chatsLoading } = useChats();
-  const { metrics } = useDashboardMetrics();
 
   // Show login screen if not authenticated
   if (isLoading) {
@@ -88,6 +83,34 @@ function App() {
   if (!isAuthenticated) {
     return <Login onLogin={login} error={error} isLoading={isLoading} />;
   }
+
+  // Authenticated app - now we can safely call hooks that make API calls
+  return <AuthenticatedApp 
+    activeTab={activeTab} 
+    setActiveTab={setActiveTab}
+    qrProgress={qrProgress}
+    setQrProgress={setQrProgress}
+    logout={logout}
+  />;
+}
+
+// Separate component for authenticated content to ensure hooks are always called in same order
+function AuthenticatedApp({ 
+  activeTab, 
+  setActiveTab, 
+  qrProgress, 
+  setQrProgress, 
+  logout 
+}: {
+  activeTab: TabType;
+  setActiveTab: (tab: TabType) => void;
+  qrProgress: number;
+  setQrProgress: (progress: number) => void;
+  logout: () => void;
+}) {
+  const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
+  const { chats, loading: chatsLoading } = useChats();
+  const { metrics } = useDashboardMetrics();
 
   // Real system status
   const systemStatus = {
@@ -106,22 +129,13 @@ function App() {
     if (activeTab === 'devices' && !connectionStatus.connected) {
       console.log('Starting QR progress timer - device not connected');
       interval = setInterval(() => {
-        setQrProgress(prev => (prev > 0 ? prev - 2 : 100));
+        setQrProgress((prev) => (prev > 0 ? prev - 2 : 100));
       }, 1000); // Update every 1 second
     } else if (connectionStatus.connected) {
       // Reset progress when device connects
       console.log('Device connected, resetting QR progress');
       setQrProgress(100);
     }
-    
-    // Always return a cleanup function
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-        console.log('QR progress timer stopped');
-      }
-    };
-  }, [activeTab, connectionStatus.connected]);
 
   if (loading || chatsLoading) {
     return (
