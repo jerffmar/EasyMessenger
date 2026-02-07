@@ -111,6 +111,12 @@ function AuthenticatedApp({
   const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
   const { chats, loading: chatsLoading } = useChats();
   const { metrics } = useDashboardMetrics();
+  const [localQrProgress, setLocalQrProgress] = useState(qrProgress);
+
+  // Update parent when local progress changes
+  useEffect(() => {
+    setQrProgress(localQrProgress);
+  }, [localQrProgress, setQrProgress]);
 
   // Real system status
   const systemStatus = {
@@ -129,12 +135,12 @@ function AuthenticatedApp({
     if (activeTab === 'devices' && !connectionStatus.connected) {
       console.log('Starting QR progress timer - device not connected');
       interval = setInterval(() => {
-        setQrProgress((prev) => (prev > 0 ? prev - 2 : 100));
+        setLocalQrProgress((prev) => (prev > 0 ? prev - 2 : 100));
       }, 1000); // Update every 1 second
     } else if (connectionStatus.connected) {
       // Reset progress when device connects
       console.log('Device connected, resetting QR progress');
-      setQrProgress(100);
+      setLocalQrProgress(100);
     }
 
   if (loading || chatsLoading) {
@@ -413,6 +419,7 @@ function AuthenticatedApp({
       `}</style>
     </div>
   );
+}
 }
 
 export default App;
