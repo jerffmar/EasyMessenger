@@ -67,6 +67,11 @@ function App() {
   const { isAuthenticated, isLoading, error, login, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [qrProgress, setQrProgress] = useState(100);
+  
+  // Always call hooks, but they will handle their own internal logic
+  const { connectionStatus, qrCode, loading, handleConnect, handleDisconnect, generateQR } = useConnectionState();
+  const { chats, loading: chatsLoading } = useChats();
+  const { metrics } = useDashboardMetrics();
 
   // Show login screen if not authenticated
   if (isLoading) {
@@ -84,17 +89,12 @@ function App() {
     return <Login onLogin={login} error={error} isLoading={isLoading} />;
   }
 
-  // Only initialize hooks that make API calls after authentication
-  const authConnectionState = useConnectionState();
-  const authChats = useChats();
-  const authMetrics = useDashboardMetrics();
-
   // Real system status
   const systemStatus = {
     apiServer: { status: 'ONLINE', color: 'text-emerald-400' },
     baileysSocket: { 
-      status: authConnectionState.connectionStatus.connected ? 'CONNECTED' : 'DISCONNECTED', 
-      color: authConnectionState.connectionStatus.connected ? 'text-emerald-400' : 'text-amber-400' 
+      status: connectionStatus.connected ? 'CONNECTED' : 'DISCONNECTED', 
+      color: connectionStatus.connected ? 'text-emerald-400' : 'text-amber-400' 
     }
   };
 
@@ -103,12 +103,12 @@ function App() {
     let interval: NodeJS.Timeout | null = null;
     
     // Only run timer if on devices tab AND no device is connected
-    if (activeTab === 'devices' && !authConnectionState.connectionStatus.connected) {
+    if (activeTab === 'devices' && !connectionStatus.connected) {
       console.log('Starting QR progress timer - device not connected');
       interval = setInterval(() => {
         setQrProgress(prev => (prev > 0 ? prev - 2 : 100));
       }, 1000); // Update every 1 second
-    } else if (authConnectionState.connectionStatus.connected) {
+    } else if (connectionStatus.connected) {
       // Reset progress when device connects
       console.log('Device connected, resetting QR progress');
       setQrProgress(100);
@@ -121,9 +121,9 @@ function App() {
         console.log('QR progress timer stopped');
       }
     };
-  }, [activeTab, authConnectionState.connectionStatus.connected]);
+  }, [activeTab, connectionStatus.connected]);
 
-  if (authConnectionState.loading || authChats.loading) {
+  if (loading || chatsLoading) {
     return (
       <div className="flex min-h-screen bg-[#F8FAFC] items-center justify-center">
         <div className="flex items-center space-x-3">
@@ -162,7 +162,7 @@ function App() {
             label="Dispositivos & QR" 
             active={activeTab === 'devices'} 
             onClick={() => setActiveTab('devices')} 
-            badge={authConnectionState.connectionStatus.connected ? undefined : "Ação Necessária"}
+            badge={connectionStatus.connected ? undefined : "Ação Necessária"}
           />
           <SidebarItem 
             icon={Users} 
@@ -196,7 +196,7 @@ function App() {
           <button 
             onClick={() => {
               logout();
-              authConnectionState.handleDisconnect();
+              handleDisconnect();
             }}
             className="flex items-center space-x-3 text-slate-500 hover:text-rose-600 hover:bg-rose-50 px-4 py-3 rounded-xl w-full transition-all text-sm font-medium"
           >
@@ -224,12 +224,12 @@ function App() {
           </div>
           <div className="flex items-center space-x-4">
             <div className={`px-4 py-1.5 rounded-full text-xs font-bold flex items-center space-x-2 border ${
-              authConnectionState.connectionStatus.connected 
+              connectionStatus.connected 
                 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                 : 'bg-amber-50 text-amber-600 border-amber-100'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${authConnectionState.connectionStatus.connected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
-              <span>{authConnectionState.connectionStatus.connected ? 'Conectado via WebSocket' : 'Aguardando Conexão'}</span>
+              <span className={`w-2 h-2 rounded-full ${connectionStatus.connected ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
+              <span>{connectionStatus.connected ? 'Conectado via WebSocket' : 'Aguardando Conexão'}</span>
             </div>
             <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden">
               <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=fff" />
@@ -241,17 +241,17 @@ function App() {
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <MetricCard title="Mensagens Hoje" value={authMetrics.metrics.messagesToday.toLocaleString()} icon={Send} trend={authMetrics.metrics.trends.messages.value} trendUp={authMetrics.metrics.trends.messages.up} />
-              <MetricCard title="Sessões Ativas" value={authMetrics.metrics.activeSessions} icon={Smartphone} />
-              <MetricCard title="Erros de Envio" value={`${authMetrics.metrics.errorRate}%`} icon={X} trend={authMetrics.metrics.trends.errors.value} trendUp={authMetrics.metrics.trends.errors.up} />
-              <MetricCard title="Tempo Médio" value={`${authMetrics.metrics.averageTime}s`} icon={Loader2} />
+              <MetricCard title="Mensagens Hoje" value={metrics.messagesToday.toLocaleString()} icon={Send} trend={metrics.trends.messages.value} trendUp={metrics.trends.messages.up} />
+              <MetricCard title="Sessões Ativas" value={metrics.activeSessions} icon={Smartphone} />
+              <MetricCard title="Erros de Envio" value={`${metrics.errorRate}%`} icon={X} trend={metrics.trends.errors.value} trendUp={metrics.trends.errors.up} />
+              <MetricCard title="Tempo Médio" value={`${metrics.averageTime}s`} icon={Loader2} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-96 flex flex-col">
                 <h3 className="font-bold text-slate-800 mb-6">Volume de Mensagens (Últimos 7 dias)</h3>
                 <div className="flex-1 flex items-end justify-between space-x-4 px-2">
-                  {authMetrics.metrics.messageVolume.map((h, i) => (
+                  {metrics.messageVolume.map((h, i) => (
                     <div key={i} className="flex-1 bg-emerald-50 rounded-t-lg relative group">
                       <div 
                         className="absolute bottom-0 w-full bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-600"
@@ -305,7 +305,7 @@ function App() {
                 <p className="text-slate-400 relative z-10">Abra o WhatsApp no seu celular e escaneie o código abaixo</p>
               </div>
               <div className="p-12 flex flex-col items-center justify-center bg-white min-h-[400px]">
-                {authConnectionState.connectionStatus.connected ? (
+                {connectionStatus.connected ? (
                   <div className="text-center">
                     <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                       <Check className="text-emerald-500" size={48} />
@@ -313,19 +313,19 @@ function App() {
                     <h4 className="text-xl font-bold text-slate-900 mb-2">Tudo pronto!</h4>
                     <p className="text-slate-500 mb-8">O Baileys está conectado e sincronizando mensagens.</p>
                     <button 
-                      onClick={authConnectionState.handleDisconnect}
+                      onClick={handleDisconnect}
                       className="text-rose-500 hover:bg-rose-50 px-6 py-2 rounded-lg font-medium transition-colors"
                     >
                       Desconectar Sessão
                     </button>
                   </div>
                 ) : (
-                  <div className="relative group cursor-pointer" onClick={authConnectionState.handleConnect}>
+                  <div className="relative group cursor-pointer" onClick={handleConnect}>
                     <div className="w-64 h-64 border-2 border-slate-100 rounded-2xl p-4 bg-white shadow-sm relative">
                       <QRCodeDisplay 
-                        qrCode={authConnectionState.qrCode || 'pending'} 
-                        onRefresh={authConnectionState.handleConnect}
-                        isLoading={!authConnectionState.qrCode}
+                        qrCode={qrCode || 'pending'} 
+                        onRefresh={handleConnect}
+                        isLoading={!qrCode}
                       />
                     </div>
                     <div className="mt-8 flex items-center space-x-2 text-slate-400 text-sm">
@@ -367,7 +367,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'chat' && <LiveChat chats={authChats.chats} isConnected={authConnectionState.connectionStatus.connected} />}
+        {activeTab === 'chat' && <LiveChat chats={chats} isConnected={connectionStatus.connected} />}
         {activeTab === 'api' && <ApiPlayground />}
         {activeTab === 'logs' && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">

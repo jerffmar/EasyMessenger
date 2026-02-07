@@ -10,6 +10,13 @@ export const useConnectionState = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is authenticated before initializing
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     // Initialize socket connection
     socketService.connect();
 
@@ -128,6 +135,13 @@ export const useChats = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if user is authenticated before loading chats
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     const loadChats = async () => {
       try {
         const chatsData = await apiService.getChats();
